@@ -71,6 +71,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { TimePicker } from "@/components/ui/time-picker";
 import { useSubjectSchedules, useCreateSchedule, useDeleteSchedule } from "@/hooks/use-schedules";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -144,13 +145,16 @@ export default function SubjectList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => setEditScheduleSubject(subject)}>
+                        <DropdownMenuItem 
+                          className="cursor-pointer focus:text-white hover:!text-white"
+                          onClick={() => setEditScheduleSubject(subject)}
+                        >
                           <Calendar className="w-4 h-4 mr-2" />
                           Edit Schedule
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive"
+                          className="text-destructive cursor-pointer focus:text-white hover:!text-white hover:!bg-destructive focus:!bg-destructive"
                           onClick={() => setDeleteSubject(subject)}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -412,8 +416,16 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
     return `${formattedHour}:${minutes} ${ampm}`;
   };
 
+  // Check if schedule already exists
+  const isDuplicateSchedule = schedules?.some(schedule => 
+    schedule.dayOfWeek === newSchedule.dayOfWeek &&
+    schedule.startTime === newSchedule.startTime &&
+    schedule.endTime === newSchedule.endTime &&
+    schedule.room.toLowerCase() === newSchedule.room.toLowerCase()
+  );
+
   const handleAddSchedule = () => {
-    if (!subject || !newSchedule.room) return;
+    if (!subject || !newSchedule.room || isDuplicateSchedule) return;
     
     createSchedule({
       subjectId: subject.id,
@@ -437,7 +449,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Schedule</DialogTitle>
           <DialogDescription>
@@ -445,7 +457,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
@@ -517,24 +529,27 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Start Time</label>
-                  <Input 
-                    type="time" 
+                  <TimePicker 
                     value={newSchedule.startTime}
-                    onChange={(e) => setNewSchedule({...newSchedule, startTime: e.target.value})}
+                    onChange={(value) => setNewSchedule({...newSchedule, startTime: value})}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">End Time</label>
-                  <Input 
-                    type="time" 
+                  <TimePicker 
                     value={newSchedule.endTime}
-                    onChange={(e) => setNewSchedule({...newSchedule, endTime: e.target.value})}
+                    onChange={(value) => setNewSchedule({...newSchedule, endTime: value})}
                   />
                 </div>
               </div>
+              {isDuplicateSchedule && newSchedule.room && (
+                <p className="text-sm text-destructive">
+                  This schedule already exists for {newSchedule.dayOfWeek} at {formatTime(newSchedule.startTime)} - {formatTime(newSchedule.endTime)} in {newSchedule.room}.
+                </p>
+              )}
               <div className="flex gap-2 justify-end">
                 <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                <Button size="sm" onClick={handleAddSchedule} disabled={isCreating || !newSchedule.room}>
+                <Button size="sm" onClick={handleAddSchedule} disabled={isCreating || !newSchedule.room || isDuplicateSchedule}>
                   {isCreating ? "Adding..." : "Add Schedule"}
                 </Button>
               </div>

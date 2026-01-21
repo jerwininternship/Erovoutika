@@ -12,8 +12,8 @@
   --secondary: 152 30% 96%;
   --secondary-foreground: 152 100% 20%;
   
-  --accent: 152 40% 90%;
-  --accent-foreground: 152 100% 20%;
+  --accent: 152 100% 20%;
+  --accent-foreground: 0 0% 100%;
   
   --background: 210 20% 99%;
   --foreground: 222 47% 11%;
@@ -50,6 +50,24 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
+  }
+
+  /* Time picker styling to match theme */
+  input[type="time"] {
+    @apply cursor-pointer;
+  }
+  
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    @apply cursor-pointer rounded p-1 transition-colors;
+    filter: invert(25%) sepia(98%) saturate(1653%) hue-rotate(131deg) brightness(92%) contrast(101%);
+  }
+  
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    @apply bg-primary/10;
+  }
+  
+  input[type="time"]:focus::-webkit-calendar-picker-indicator {
+    filter: invert(25%) sepia(98%) saturate(1653%) hue-rotate(131deg) brightness(92%) contrast(101%);
   }
 }
 

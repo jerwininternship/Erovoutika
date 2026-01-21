@@ -202,6 +202,37 @@ function TeacherDashboard() {
 
   // Sort days in order
   const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const dayAbbr: Record<string, string> = {
+    "Monday": "Mon",
+    "Tuesday": "Tue", 
+    "Wednesday": "Wed",
+    "Thursday": "Thu",
+    "Friday": "Fri",
+    "Saturday": "Sat",
+    "Sunday": "Sun"
+  };
+
+  // Consolidate schedules with same time and room into single rows
+  const consolidateSchedules = (schedules: { dayOfWeek: string; startTime: string; endTime: string; room: string }[]) => {
+    const grouped = schedules.reduce((acc, sched) => {
+      const key = `${sched.startTime}-${sched.endTime}-${sched.room}`;
+      if (!acc[key]) {
+        acc[key] = {
+          days: [],
+          startTime: sched.startTime,
+          endTime: sched.endTime,
+          room: sched.room
+        };
+      }
+      acc[key].days.push(sched.dayOfWeek);
+      return acc;
+    }, {} as Record<string, { days: string[]; startTime: string; endTime: string; room: string }>);
+
+    return Object.values(grouped).map(g => ({
+      ...g,
+      days: g.days.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
+    }));
+  };
   
   // Format time from 24h to 12h format
   const formatTime = (time: string) => {
@@ -245,13 +276,18 @@ function TeacherDashboard() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      {group.schedules
-                        .sort((a, b) => dayOrder.indexOf(a.dayOfWeek) - dayOrder.indexOf(b.dayOfWeek))
-                        .map((sched, schedIdx) => (
+                      {consolidateSchedules(group.schedules).map((sched, schedIdx) => (
                           <div key={schedIdx} className="flex items-center justify-between text-sm bg-white p-2 rounded border border-gray-100">
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium text-gray-700 min-w-[90px]">{sched.dayOfWeek}</span>
+                              <div className="font-medium text-gray-700 min-w-[90px]">
+                                {sched.days.length > 1 
+                                  ? sched.days.map((d, i) => (
+                                      <div key={i}>{dayAbbr[d]}</div>
+                                    ))
+                                  : sched.days[0]
+                                }
+                              </div>
                               <span className="text-muted-foreground">
                                 {formatTime(sched.startTime)} - {formatTime(sched.endTime)}
                               </span>
