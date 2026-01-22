@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { 
-  Settings, 
-  Palette, 
-  Image, 
-  Building2, 
-  Save, 
+import {
+  Settings,
+  Palette,
+  Image,
+  Building2,
+  Save,
   RotateCcw,
   Upload,
   Check,
@@ -37,7 +37,7 @@ import { useSystemSettings } from "@/hooks/use-system-settings";
 
 // Color presets for the theme
 const colorPresets = [
-  { name: "DLSU Green", primary: "#006937", secondary: "#004d29" },
+  { name: "Green", primary: "#006937", secondary: "#004d29" },
   { name: "Royal Blue", primary: "#1e40af", secondary: "#1e3a8a" },
   { name: "Crimson Red", primary: "#dc2626", secondary: "#b91c1c" },
   { name: "Purple", primary: "#7c3aed", secondary: "#6d28d9" },
@@ -98,7 +98,7 @@ export default function SystemSettings() {
     });
     setLogoPreview(settings.logoUrl || null);
     setFaviconPreview(settings.faviconUrl || null);
-    
+
     // Find matching preset
     const matchingPreset = colorPresets.find(
       p => p.primary === settings.primaryColor && p.secondary === settings.secondaryColor
@@ -150,7 +150,7 @@ export default function SystemSettings() {
       theme: data.theme,
       fontFamily: data.fontFamily,
     });
-    
+
     toast({
       title: "Settings saved",
       description: "Your system settings have been updated successfully.",
@@ -255,10 +255,10 @@ export default function SystemSettings() {
                       <FormItem>
                         <FormLabel>School / Organization Name</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g., De La Salle University" 
+                          <Input
+                            placeholder="e.g., De La Salle University"
                             className="max-w-md"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>
@@ -276,10 +276,10 @@ export default function SystemSettings() {
                       <FormItem>
                         <FormLabel>System Title</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g., AttendED" 
+                          <Input
+                            placeholder="e.g., AttendED"
                             className="max-w-md"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>
@@ -297,10 +297,10 @@ export default function SystemSettings() {
                       <FormItem>
                         <FormLabel>Tagline (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g., Streamlining Academic Attendance" 
+                          <Input
+                            placeholder="e.g., Streamlining Academic Attendance"
                             className="max-w-md"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormDescription>
@@ -327,14 +327,14 @@ export default function SystemSettings() {
                       <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                         {logoPreview ? (
                           <div className="space-y-4">
-                            <img 
-                              src={logoPreview} 
-                              alt="Logo preview" 
+                            <img
+                              src={logoPreview}
+                              alt="Logo preview"
                               className="max-h-24 mx-auto object-contain"
                             />
-                            <Button 
-                              type="button" 
-                              variant="outline" 
+                            <Button
+                              type="button"
+                              variant="outline"
                               size="sm"
                               onClick={() => {
                                 setLogoPreview(null);
@@ -353,9 +353,9 @@ export default function SystemSettings() {
                             <span className="block text-xs text-muted-foreground mt-1">
                               PNG, JPG, SVG (max 2MB)
                             </span>
-                            <input 
-                              type="file" 
-                              className="hidden" 
+                            <input
+                              type="file"
+                              className="hidden"
                               accept="image/*"
                               onChange={handleLogoUpload}
                             />
@@ -369,14 +369,14 @@ export default function SystemSettings() {
                       <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                         {faviconPreview ? (
                           <div className="space-y-4">
-                            <img 
-                              src={faviconPreview} 
-                              alt="Favicon preview" 
+                            <img
+                              src={faviconPreview}
+                              alt="Favicon preview"
                               className="w-16 h-16 mx-auto object-contain"
                             />
-                            <Button 
-                              type="button" 
-                              variant="outline" 
+                            <Button
+                              type="button"
+                              variant="outline"
                               size="sm"
                               onClick={() => {
                                 setFaviconPreview(null);
@@ -395,9 +395,9 @@ export default function SystemSettings() {
                             <span className="block text-xs text-muted-foreground mt-1">
                               ICO, PNG (32x32 or 64x64)
                             </span>
-                            <input 
-                              type="file" 
-                              className="hidden" 
+                            <input
+                              type="file"
+                              className="hidden"
                               accept="image/*,.ico"
                               onChange={handleFaviconUpload}
                             />
@@ -426,11 +426,10 @@ export default function SystemSettings() {
                         key={preset.name}
                         type="button"
                         onClick={() => applyColorPreset(preset)}
-                        className={`relative p-4 rounded-lg border-2 transition-all ${
-                          selectedPreset === preset.name 
-                            ? 'border-primary ring-2 ring-primary/20' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                        className={`relative p-4 rounded-lg border-2 transition-all ${selectedPreset === preset.name
+                          ? 'border-primary ring-2 ring-primary/20'
+                          : 'border-gray-200 hover:border-gray-300'
+                          }`}
                       >
                         {selectedPreset === preset.name && (
                           <div className="absolute top-2 right-2">
@@ -438,12 +437,12 @@ export default function SystemSettings() {
                           </div>
                         )}
                         <div className="flex gap-2 mb-3">
-                          <div 
-                            className="w-8 h-8 rounded-full shadow-sm" 
+                          <div
+                            className="w-8 h-8 rounded-full shadow-sm"
                             style={{ backgroundColor: preset.primary }}
                           />
-                          <div 
-                            className="w-8 h-8 rounded-full shadow-sm" 
+                          <div
+                            className="w-8 h-8 rounded-full shadow-sm"
                             style={{ backgroundColor: preset.secondary }}
                           />
                         </div>
@@ -471,8 +470,8 @@ export default function SystemSettings() {
                           <FormLabel>Primary Color</FormLabel>
                           <FormControl>
                             <div className="flex gap-3">
-                              <input 
-                                type="color" 
+                              <input
+                                type="color"
                                 value={field.value}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
@@ -480,8 +479,8 @@ export default function SystemSettings() {
                                 }}
                                 className="w-12 h-10 rounded border cursor-pointer"
                               />
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
                                   setSelectedPreset(null);
@@ -507,8 +506,8 @@ export default function SystemSettings() {
                           <FormLabel>Secondary Color</FormLabel>
                           <FormControl>
                             <div className="flex gap-3">
-                              <input 
-                                type="color" 
+                              <input
+                                type="color"
                                 value={field.value}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
@@ -516,7 +515,7 @@ export default function SystemSettings() {
                                 }}
                                 className="w-12 h-10 rounded border cursor-pointer"
                               />
-                              <Input 
+                              <Input
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(e.target.value);
@@ -541,14 +540,14 @@ export default function SystemSettings() {
                     <Label>Live Preview</Label>
                     <div className="p-6 bg-white rounded-lg border space-y-4">
                       <div className="flex gap-3 flex-wrap">
-                        <Button 
+                        <Button
                           type="button"
                           style={{ backgroundColor: watchPrimaryColor, borderColor: watchPrimaryColor }}
                           className="hover:opacity-90 text-white"
                         >
                           Primary Button
                         </Button>
-                        <Button 
+                        <Button
                           type="button"
                           variant="outline"
                           style={{ borderColor: watchPrimaryColor, color: watchPrimaryColor }}
@@ -557,25 +556,25 @@ export default function SystemSettings() {
                         </Button>
                       </div>
                       <div className="flex items-center gap-4 flex-wrap">
-                        <a 
-                          href="#" 
+                        <a
+                          href="#"
                           onClick={(e) => e.preventDefault()}
                           style={{ color: watchPrimaryColor }}
                           className="text-sm hover:underline"
                         >
                           Sample Link
                         </a>
-                        <span 
+                        <span
                           className="px-3 py-1 rounded-full text-white text-sm"
                           style={{ backgroundColor: watchPrimaryColor }}
                         >
                           Badge
                         </span>
-                        <div 
+                        <div
                           className="w-full max-w-[200px] h-2 rounded-full"
                           style={{ backgroundColor: `${watchPrimaryColor}30` }}
                         >
-                          <div 
+                          <div
                             className="w-3/4 h-full rounded-full"
                             style={{ backgroundColor: watchPrimaryColor }}
                           />
@@ -610,11 +609,10 @@ export default function SystemSettings() {
                           >
                             <Label
                               htmlFor="light"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                field.value === 'light' 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'light'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
                             >
                               <RadioGroupItem value="light" id="light" className="sr-only" />
                               <Sun className="w-6 h-6 mb-2" />
@@ -622,11 +620,10 @@ export default function SystemSettings() {
                             </Label>
                             <Label
                               htmlFor="dark"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                field.value === 'dark' 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'dark'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
                             >
                               <RadioGroupItem value="dark" id="dark" className="sr-only" />
                               <Moon className="w-6 h-6 mb-2" />
@@ -634,11 +631,10 @@ export default function SystemSettings() {
                             </Label>
                             <Label
                               htmlFor="system"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                field.value === 'system' 
-                                  ? 'border-primary bg-primary/5' 
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'system'
+                                ? 'border-primary bg-primary/5'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
                             >
                               <RadioGroupItem value="system" id="system" className="sr-only" />
                               <Monitor className="w-6 h-6 mb-2" />
@@ -681,14 +677,13 @@ export default function SystemSettings() {
                               <Label
                                 key={font.value}
                                 htmlFor={font.value}
-                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                                  field.value === font.value 
-                                    ? 'border-primary bg-primary/5' 
-                                    : 'border-gray-200 hover:border-gray-300'
-                                }`}
+                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === font.value
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-gray-200 hover:border-gray-300'
+                                  }`}
                               >
                                 <RadioGroupItem value={font.value} id={font.value} className="sr-only" />
-                                <span 
+                                <span
                                   className="text-2xl mb-2"
                                   style={{ fontFamily: font.label }}
                                 >
@@ -718,7 +713,7 @@ export default function SystemSettings() {
                     <div className="grid md:grid-cols-2 min-h-[300px]">
                       <div className={`p-6 flex items-center justify-center ${getPreviewBgClass()}`}>
                         <div className="text-center space-y-3">
-                          <div 
+                          <div
                             className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-white shadow-lg"
                             style={{ backgroundColor: watchPrimaryColor }}
                           >
@@ -734,7 +729,7 @@ export default function SystemSettings() {
                           <p className="text-sm text-muted-foreground">Sign in to continue</p>
                         </div>
                       </div>
-                      <div 
+                      <div
                         className="p-6 flex items-center justify-center text-white"
                         style={{ backgroundColor: watchPrimaryColor }}
                       >

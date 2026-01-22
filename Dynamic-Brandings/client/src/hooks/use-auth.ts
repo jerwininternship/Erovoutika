@@ -41,8 +41,8 @@ export function useAuth() {
       setLocation("/dashboard");
     },
     onError: (error: Error) => {
-      toast({ 
-        title: "Login Failed", 
+      toast({
+        title: "Login Failed",
         description: error.message,
         variant: "destructive"
       });
@@ -64,6 +64,10 @@ export function useAuth() {
     },
   });
 
+  const refreshUser = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+  };
+
   return {
     user,
     isLoading,
@@ -71,5 +75,6 @@ export function useAuth() {
     isLoggingIn: loginMutation.isPending,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
+    refreshUser,
   };
 }
