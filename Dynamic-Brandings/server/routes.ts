@@ -75,10 +75,30 @@ export async function registerRoutes(
     }
   });
 
+  // Check if username exists
+  app.get('/api/users/check-username', async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const username = req.query.username as string;
+    if (!username) {
+      return res.status(400).json({ message: "Username is required" });
+    }
+    const existingUser = await storage.getUserByUsername(username);
+    res.json({ exists: !!existingUser });
+  });
+
   app.put(api.users.update.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const id = parseInt(req.params.id);
     const updates = api.users.update.input.parse(req.body);
+
+    // If updating username, check if it already exists
+    if (updates.username) {
+      const existingUser = await storage.getUserByUsername(updates.username);
+      if (existingUser && existingUser.id !== id) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+    }
+
     const updated = await storage.updateUser(id, updates);
     if (!updated) return res.status(404).json({ message: "User not found" });
     res.json(updated);
@@ -208,18 +228,18 @@ export async function registerRoutes(
   app.post('/api/attendance/scan', async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const user = req.user as any;
-    
+
     if (user.role !== 'student') {
       return res.status(403).json({ message: "Only students can scan QR codes" });
     }
-    
+
     const { qrCode, subjectId: providedSubjectId } = req.body;
-    
+
     // For demo purposes, if no actual QR code is provided, use the providedSubjectId
     // In production, we would validate the actual QR code
     let subjectId: number;
     let isLate = false;
-    
+
     if (qrCode && !qrCode.startsWith('SCAN_')) {
       // Try to validate actual QR code
       const result = await storage.validateAndConsumeQrCode(qrCode);
@@ -234,26 +254,26 @@ export async function registerRoutes(
     } else {
       return res.status(400).json({ message: "QR code or subject ID required" });
     }
-    
+
     // Check if student is enrolled in this subject
     const students = await storage.getSubjectStudents(subjectId);
     const isEnrolled = students.some(s => s.id === user.id);
-    
+
     if (!isEnrolled) {
       return res.status(403).json({ message: "You are not enrolled in this subject" });
     }
-    
+
     // Check if already marked attendance today for this subject
     const today = new Date().toISOString().split('T')[0];
     const existingRecords = await storage.getAttendance(user.id, subjectId, today);
-    
+
     if (existingRecords.length > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "Attendance already recorded for today",
         status: existingRecords[0].status
       });
     }
-    
+
     // Record attendance
     const status = isLate ? 'late' : 'present';
     const record = await storage.markAttendance({
@@ -263,8 +283,8 @@ export async function registerRoutes(
       status,
       remarks: isLate ? 'Arrived late' : 'On time'
     });
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       message: `Attendance recorded as ${status}`,
       status,
       record
@@ -392,7 +412,7 @@ async function seedDatabase() {
 
   // Seed schedules for existing subjects if they don't have any
   await seedSchedulesForExistingSubjects();
-  
+
   // Seed students for existing subjects
   await seedStudentsForSubjects();
 }
@@ -400,11 +420,11 @@ async function seedDatabase() {
 async function seedSchedulesForExistingSubjects() {
   // Get all subjects
   const allSubjects = await storage.getAllSubjects();
-  
+
   for (const subject of allSubjects) {
     // Check if subject already has schedules
     const existingSchedules = await storage.getSchedulesBySubject(subject.id);
-    
+
     if (existingSchedules.length === 0) {
       // Add sample schedules based on subject code pattern
       if (subject.code === "SE101") {
@@ -432,7 +452,7 @@ async function seedSchedulesForExistingSubjects() {
 async function seedStudentsForSubjects() {
   // Check if we already have enough students
   const existingStudents = await storage.getUsersByRole("student");
-  
+
   if (existingStudents.length < 10) {
     // Filipino student names
     const studentNames = [
@@ -454,11 +474,11 @@ async function seedStudentsForSubjects() {
     ];
 
     const createdStudents: number[] = [];
-    
+
     for (let i = 0; i < studentNames.length; i++) {
       const name = studentNames[i];
       const username = `student${i + 2}`; // student2, student3, etc.
-      
+
       // Check if student already exists
       const existing = await storage.getUserByUsername(username);
       if (!existing) {
@@ -479,12 +499,12 @@ async function seedStudentsForSubjects() {
     // Enroll students in subjects (randomize enrollment)
     for (const subject of allSubjects) {
       const existingEnrollments = await storage.getSubjectStudents(subject.id);
-      
+
       if (existingEnrollments.length < 5) {
         // Enroll 8-12 random students per subject
         const shuffledStudents = [...allStudents].sort(() => Math.random() - 0.5);
         const studentsToEnroll = shuffledStudents.slice(0, Math.floor(Math.random() * 5) + 8);
-        
+
         for (const student of studentsToEnroll) {
           // Check if already enrolled
           const isEnrolled = existingEnrollments.some(e => e.id === student.id);
