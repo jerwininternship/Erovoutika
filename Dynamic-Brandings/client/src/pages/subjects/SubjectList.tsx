@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { useSubjects, useCreateSubject, useSubjectStudents } from "@/hooks/use-subjects";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  BookOpen, 
-  Plus, 
-  Search, 
-  MoreVertical, 
+import {
+  BookOpen,
+  Plus,
+  Search,
+  MoreVertical,
   Users,
   User,
   X,
@@ -103,8 +103,8 @@ export default function SubjectList() {
     }
   }, [subjects, setLocation]);
 
-  const filteredSubjects = subjects?.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredSubjects = subjects?.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.code.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -128,8 +128,8 @@ export default function SubjectList() {
 
       <div className="relative">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search subjects..." 
+        <Input
+          placeholder="Search subjects..."
           className="pl-9 max-w-md"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -145,8 +145,8 @@ export default function SubjectList() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSubjects?.map((subject) => (
-            <Card 
-              key={subject.id} 
+            <Card
+              key={subject.id}
               className="group cursor-pointer hover:border-primary/50 hover:shadow-lg transition-all duration-300"
               onClick={() => handleSubjectClick(subject)}
             >
@@ -163,7 +163,7 @@ export default function SubjectList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="cursor-pointer focus:text-white hover:!text-white"
                           onClick={() => setEditScheduleSubject(subject)}
                         >
@@ -171,7 +171,7 @@ export default function SubjectList() {
                           Edit Schedule
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive cursor-pointer focus:text-white hover:!text-white hover:!bg-destructive focus:!bg-destructive"
                           onClick={() => setDeleteSubject(subject)}
                         >
@@ -214,10 +214,10 @@ export default function SubjectList() {
       )}
 
       {/* Student List Dialog */}
-      <StudentListDialog 
-        subject={selectedSubject} 
-        open={!!selectedSubject} 
-        onClose={() => setSelectedSubject(null)} 
+      <StudentListDialog
+        subject={selectedSubject}
+        open={!!selectedSubject}
+        onClose={() => setSelectedSubject(null)}
       />
 
       {/* Edit Schedule Dialog */}
@@ -257,7 +257,7 @@ function StudentListDialog({ subject, open, onClose }: { subject: Subject | null
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-auto">
           {isLoading ? (
             <div className="space-y-3">
@@ -318,7 +318,7 @@ function CreateSubjectDialog() {
   const [open, setOpen] = useState(false);
   const { mutate: createSubject, isPending } = useCreateSubject();
   const { user } = useAuth();
-  
+
   const form = useForm<z.infer<typeof insertSubjectSchema>>({
     resolver: zodResolver(insertSubjectSchema),
     defaultValues: {
@@ -353,7 +353,7 @@ function CreateSubjectDialog() {
             Add a new course to your teaching catalog.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -369,7 +369,7 @@ function CreateSubjectDialog() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="code"
@@ -416,7 +416,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
   const { mutate: createSchedule, isPending: isCreating } = useCreateSchedule();
   const { mutate: deleteSchedule } = useDeleteSchedule();
   const [showAddForm, setShowAddForm] = useState(false);
-  
+
   const [newSchedule, setNewSchedule] = useState({
     dayOfWeek: "Monday",
     startTime: "09:00",
@@ -425,7 +425,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
   });
 
   const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  
+
   const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':');
     const h = parseInt(hours);
@@ -433,18 +433,32 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
     const formattedHour = h % 12 || 12;
     return `${formattedHour}:${minutes} ${ampm}`;
   };
+  // Helper function to convert time string to minutes for comparison
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
 
-  // Check if schedule already exists
-  const isDuplicateSchedule = schedules?.some(schedule => 
+  // Check if two time ranges overlap
+  const timesOverlap = (start1: string, end1: string, start2: string, end2: string) => {
+    const s1 = timeToMinutes(start1);
+    const e1 = timeToMinutes(end1);
+    const s2 = timeToMinutes(start2);
+    const e2 = timeToMinutes(end2);
+    return s1 < e2 && s2 < e1;
+  };
+
+  // Find any conflicting schedule on the same day with overlapping time
+  const conflictingSchedule = schedules?.find(schedule =>
     schedule.dayOfWeek === newSchedule.dayOfWeek &&
-    schedule.startTime === newSchedule.startTime &&
-    schedule.endTime === newSchedule.endTime &&
-    schedule.room.toLowerCase() === newSchedule.room.toLowerCase()
+    timesOverlap(schedule.startTime, schedule.endTime, newSchedule.startTime, newSchedule.endTime)
   );
 
+  const hasScheduleConflict = !!conflictingSchedule;
+
   const handleAddSchedule = () => {
-    if (!subject || !newSchedule.room || isDuplicateSchedule) return;
-    
+    if (!subject || !newSchedule.room || hasScheduleConflict) return;
+
     createSchedule({
       subjectId: subject.id,
       dayOfWeek: newSchedule.dayOfWeek as any,
@@ -474,7 +488,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
             Manage the schedule for {subject.name} ({subject.code})
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           {isLoading ? (
             <div className="space-y-2">
@@ -502,9 +516,9 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
                         <span>{schedule.room}</span>
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => handleDeleteSchedule(schedule.id)}
                     >
@@ -524,7 +538,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Day</label>
-                  <Select value={newSchedule.dayOfWeek} onValueChange={(v) => setNewSchedule({...newSchedule, dayOfWeek: v})}>
+                  <Select value={newSchedule.dayOfWeek} onValueChange={(v) => setNewSchedule({ ...newSchedule, dayOfWeek: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -537,37 +551,37 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Room</label>
-                  <Input 
-                    placeholder="e.g. Q3212" 
+                  <Input
+                    placeholder="e.g. Q3212"
                     value={newSchedule.room}
-                    onChange={(e) => setNewSchedule({...newSchedule, room: e.target.value})}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, room: e.target.value })}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Start Time</label>
-                  <TimePicker 
+                  <TimePicker
                     value={newSchedule.startTime}
-                    onChange={(value) => setNewSchedule({...newSchedule, startTime: value})}
+                    onChange={(value) => setNewSchedule({ ...newSchedule, startTime: value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">End Time</label>
-                  <TimePicker 
+                  <TimePicker
                     value={newSchedule.endTime}
-                    onChange={(value) => setNewSchedule({...newSchedule, endTime: value})}
+                    onChange={(value) => setNewSchedule({ ...newSchedule, endTime: value })}
                   />
                 </div>
               </div>
-              {isDuplicateSchedule && newSchedule.room && (
-                <p className="text-sm text-destructive">
-                  This schedule already exists for {newSchedule.dayOfWeek} at {formatTime(newSchedule.startTime)} - {formatTime(newSchedule.endTime)} in {newSchedule.room}.
+              {hasScheduleConflict && conflictingSchedule && (
+                <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-md border border-destructive/20">
+                  Schedule conflict: This time overlaps with an existing schedule on {conflictingSchedule.dayOfWeek} ({formatTime(conflictingSchedule.startTime)} - {formatTime(conflictingSchedule.endTime)}). Please choose a different time.
                 </p>
               )}
               <div className="flex gap-2 justify-end">
                 <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancel</Button>
-                <Button size="sm" onClick={handleAddSchedule} disabled={isCreating || !newSchedule.room || isDuplicateSchedule}>
+                <Button size="sm" onClick={handleAddSchedule} disabled={isCreating || !newSchedule.room || hasScheduleConflict}>
                   {isCreating ? "Adding..." : "Add Schedule"}
                 </Button>
               </div>
@@ -591,7 +605,7 @@ function EditScheduleDialog({ subject, open, onClose }: { subject: Subject | nul
 function DeleteSubjectDialog({ subject, open, onClose }: { subject: Subject | null; open: boolean; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const { mutate: deleteSubject, isPending } = useMutation({
     mutationFn: async (id: number) => {
       const res = await fetch(`/api/subjects/${id}`, {
