@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
+import { useSystemSettings } from "@/hooks/use-system-settings";
 import { useLocation } from "wouter";
 import { 
   GraduationCap, 
@@ -27,7 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 // Using z.enum directly for type safety with the backend schema
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  identifier: z.string().min(1, "Email or username is required"),
   password: z.string().min(1, "Password is required"),
   role: z.enum(["student", "teacher", "superadmin"]),
 });
@@ -36,6 +37,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const { login, isLoggingIn, user } = useAuth();
+  const { settings } = useSystemSettings();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"student" | "teacher" | "superadmin">("student");
 
@@ -48,7 +50,7 @@ export default function Login() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      identifier: "",
       password: "",
       role: "student",
     },
@@ -65,13 +67,17 @@ export default function Login() {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-2">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 mb-4">
-              <GraduationCap className="w-8 h-8" />
+              {settings.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+              ) : (
+                <GraduationCap className="w-8 h-8" />
+              )}
             </div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-gray-900">
               Welcome Back
             </h1>
             <p className="text-muted-foreground">
-              Sign in to your AttendED account
+              Sign in to your {settings.systemTitle} account
             </p>
           </div>
 
@@ -81,24 +87,26 @@ export default function Login() {
             onValueChange={(v) => setActiveTab(v as any)}
             className="w-full"
           >
+            {/* -- removed the tablist of the roles
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="student">Student</TabsTrigger>
               <TabsTrigger value="teacher">Teacher</TabsTrigger>
               <TabsTrigger value="superadmin">Admin</TabsTrigger>
             </TabsList>
+*/}
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="username"
+                  name="identifier"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Username</FormLabel>
+                      <FormLabel>Email or Username</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input className="pl-9 h-11" placeholder="ID Number / Username" {...field} />
+                          <Input className="pl-9 h-11" placeholder="Email or Username" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -144,14 +152,14 @@ export default function Login() {
       </div>
 
       {/* Right Side - Visual */}
-      <div className="hidden lg:flex relative bg-primary items-center justify-center p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
+            <div className="hidden lg:flex relative bg-primary items-center justify-center p-12 overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-10 mix-blend-overlay" />
+            {/* <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" /> */}
         
         <div className="relative z-10 max-w-lg text-white space-y-8">
           <div className="space-y-4">
             <h2 className="text-4xl font-display font-bold leading-tight">
-              Streamlining Academic Attendance at De La Salle University
+              {settings.tagline || "Streamlining Academic Attendance"} at {settings.schoolName}
             </h2>
             <p className="text-lg text-primary-foreground/80 leading-relaxed">
               Efficient, accurate, and real-time attendance monitoring for students and faculty.

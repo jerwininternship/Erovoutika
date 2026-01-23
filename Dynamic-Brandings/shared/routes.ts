@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertUserSchema, insertSubjectSchema, insertAttendanceSchema, insertQrCodeSchema, users, subjects, attendance, enrollments } from './schema';
+import { insertUserSchema, insertSubjectSchema, insertAttendanceSchema, insertQrCodeSchema, insertScheduleSchema, users, subjects, attendance, enrollments, schedules } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -163,6 +163,44 @@ export const api = {
         201: z.custom<typeof insertQrCodeSchema>(),
       },
     }
+  },
+  schedules: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/schedules',
+      responses: {
+        200: z.array(z.custom<typeof schedules.$inferSelect>()),
+      },
+    },
+    listByTeacher: {
+      method: 'GET' as const,
+      path: '/api/schedules/teacher',
+      responses: {
+        200: z.array(z.custom<typeof schedules.$inferSelect & { subjectName: string; subjectCode: string }>()),
+      },
+    },
+    listBySubject: {
+      method: 'GET' as const,
+      path: '/api/subjects/:id/schedules',
+      responses: {
+        200: z.array(z.custom<typeof schedules.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/schedules',
+      input: insertScheduleSchema,
+      responses: {
+        201: z.custom<typeof schedules.$inferSelect>(),
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/schedules/:id',
+      responses: {
+        204: z.void(),
+      },
+    },
   }
 };
 

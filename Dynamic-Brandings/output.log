@@ -1,0 +1,32 @@
+C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\node_modules\pg-pool\index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: relation "schedules" does not exist
+    at C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\node_modules\src\node-postgres\session.ts:104:19)
+    at async seedSchedulesForExistingSubjects (C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\server\routes.ts:406:31)
+    at async seedDatabase (C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\server\routes.ts:394:3)
+    at async registerRoutes (C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\server\routes.ts:315:3)
+    at async <anonymous> (C:\Users\Jerwin\Documents\Erovoutika Attendance\Erovoutika-Attendance\Dynamic-Brandings\server\index.ts:64:3) {
+  length: 108,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '81',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+
+Node.js v24.13.0

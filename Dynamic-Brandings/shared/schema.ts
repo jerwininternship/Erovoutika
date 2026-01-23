@@ -8,9 +8,11 @@ import { relations } from "drizzle-orm";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role", { enum: ["student", "teacher", "superadmin"] }).notNull(),
+  profilePicture: text("profile_picture"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -47,6 +49,15 @@ export const qrCodes = pgTable("qr_codes", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const schedules = pgTable("schedules", {
+  id: serial("id").primaryKey(),
+  subjectId: integer("subject_id").references(() => subjects.id).notNull(),
+  dayOfWeek: text("day_of_week", { enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] }).notNull(),
+  startTime: text("start_time").notNull(), // Format: "HH:mm" e.g., "09:00"
+  endTime: text("end_time").notNull(), // Format: "HH:mm" e.g., "10:30"
+  room: text("room").notNull(),
+});
+
 // === RELATIONS ===
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -64,6 +75,14 @@ export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   enrollments: many(enrollments),
   attendanceRecords: many(attendance),
   qrCodes: many(qrCodes),
+  schedules: many(schedules),
+}));
+
+export const schedulesRelations = relations(schedules, ({ one }) => ({
+  subject: one(subjects, {
+    fields: [schedules.subjectId],
+    references: [subjects.id],
+  }),
 }));
 
 export const enrollmentsRelations = relations(enrollments, ({ one }) => ({
@@ -95,6 +114,7 @@ export const insertSubjectSchema = createInsertSchema(subjects).omit({ id: true 
 export const insertEnrollmentSchema = createInsertSchema(enrollments).omit({ id: true, enrolledAt: true });
 export const insertAttendanceSchema = createInsertSchema(attendance).omit({ id: true, timeIn: true });
 export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({ id: true, createdAt: true });
+export const insertScheduleSchema = createInsertSchema(schedules).omit({ id: true });
 
 // === EXPLICIT API CONTRACT TYPES ===
 
@@ -104,10 +124,12 @@ export type Subject = typeof subjects.$inferSelect;
 export type Enrollment = typeof enrollments.$inferSelect;
 export type Attendance = typeof attendance.$inferSelect;
 export type QrCode = typeof qrCodes.$inferSelect;
+export type Schedule = typeof schedules.$inferSelect;
+export type InsertSchedule = z.infer<typeof insertScheduleSchema>;
 
 // Request types
 export type LoginRequest = {
-  username: string;
+  identifier: string; // email or username
   password: string;
   role: "student" | "teacher" | "superadmin";
 };

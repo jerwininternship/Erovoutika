@@ -30,19 +30,23 @@ export function setupAuth(app: Express) {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        // In a real app, use bcrypt.compare(password, user.password)
-        if (!user || user.password !== password) {
-          return done(null, false);
-        } else {
-          return done(null, user);
+    new LocalStrategy(
+      { usernameField: 'identifier' },
+      async (identifier, password, done) => {
+        try {
+          // Try to find user by email or username
+          const user = await storage.getUserByIdentifier(identifier);
+          // In a real app, use bcrypt.compare(password, user.password)
+          if (!user || user.password !== password) {
+            return done(null, false);
+          } else {
+            return done(null, user);
+          }
+        } catch (err) {
+          return done(err);
         }
-      } catch (err) {
-        return done(err);
       }
-    }),
+    ),
   );
 
   passport.serializeUser((user, done) => {
