@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useUsers, useCreateUser, useDeleteUser } from "@/hooks/use-users";
+import { useState, useEffect } from "react";
+import { useUsers, useCreateUser, useDeleteUser, useUpdateUser } from "@/hooks/use-users";
 import {
   Table,
   TableBody,
@@ -49,7 +49,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { Search, Plus, Trash2, UserPlus } from "lucide-react";
+import { Search, Plus, Trash2, UserPlus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function UserManagement() {
@@ -57,6 +57,8 @@ export default function UserManagement() {
   const { data: users, isLoading } = useUsers(roleFilter);
   const { mutate: deleteUser } = useDeleteUser();
   const [search, setSearch] = useState("");
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const filteredUsers = users?.filter(u => 
     u.fullName.toLowerCase().includes(search.toLowerCase()) || 
@@ -134,6 +136,17 @@ export default function UserManagement() {
                   </span>
                 </TableCell>
                 <TableCell className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-muted-foreground hover:text-primary"
+                    onClick={() => {
+                      setEditingUser(user);
+                      setEditDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
@@ -163,7 +176,7 @@ export default function UserManagement() {
             ))}
             {filteredUsers?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   No users found matching your criteria.
                 </TableCell>
               </TableRow>
@@ -171,6 +184,15 @@ export default function UserManagement() {
           </TableBody>
         </Table>
       </div>
+
+      <EditUserDialog 
+        user={editingUser} 
+        open={editDialogOpen} 
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEditingUser(null);
+        }} 
+      />
     </div>
   );
 }
@@ -300,6 +322,171 @@ function CreateUserDialog() {
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? "Creating..." : "Create Account"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface EditUserDialogProps {
+  user: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
+  const { mutate: updateUser, isPending } = useUpdateUser();
+  
+  const form = useForm<z.infer<typeof insertUserSchema>>({
+    resolver: zodResolver(insertUserSchema.partial().extend({
+      fullName: z.string().min(1, "Full name is required"),
+      username: z.string().min(1, "Username is required"),
+      email: z.string().email("Invalid email address"),
+      role: z.enum(["student", "teacher", "superadmin"]),
+    })),
+    defaultValues: {
+      fullName: "",
+      username: "",
+      email: "",
+      password: "",
+      role: "student",
+    },
+  });
+
+  // Reset form when user changes (only when user.id changes)
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        fullName: user.fullName || "",
+        username: user.username || "",
+        email: user.email || "",
+        password: "",
+        role: user.role || "student",
+      });
+    }
+  }, [user?.id, form]);
+
+  const onSubmit = (data: z.infer<typeof insertUserSchema>) => {
+    if (!user) return;
+    
+    // Only include password if it was changed
+    const updateData: any = {
+      fullName: data.fullName,
+      username: data.username,
+      email: data.email,
+      role: data.role,
+    };
+    
+    if (data.password && data.password.trim() !== "") {
+      updateData.password = data.password;
+    }
+
+    updateUser({ id: user.id, data: updateData }, {
+      onSuccess: () => {
+        onOpenChange(false);
+        form.reset();
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>
+            Update the user's account information. Leave password blank to keep the current password.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Juan Dela Cruz" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 12345678" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="e.g. user@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Leave blank to keep current" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="superadmin">Superadmin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </form>
