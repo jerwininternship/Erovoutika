@@ -29,25 +29,45 @@ export function useTeacherSchedules() {
       // First get subjects taught by this teacher
       const { data: subjects, error: subjectsError } = await supabase
         .from("subjects")
-        .select("id")
+        .select("id, name, code")
         .eq("teacher_id", user.id);
       
-      if (subjectsError) throw new Error("Failed to fetch subjects");
+      if (subjectsError) {
+        console.error("Failed to fetch subjects:", subjectsError);
+        throw new Error("Failed to fetch subjects");
+      }
       if (!subjects || subjects.length === 0) return [];
       
       const subjectIds = subjects.map(s => s.id);
       
+      // Create a map of subject id to name/code for fallback
+      const subjectMap = subjects.reduce((acc, s) => {
+        acc[s.id] = { name: s.name, code: s.code };
+        return acc;
+      }, {} as Record<number, { name: string; code: string }>);
+      
       // Then get schedules for those subjects
       const { data, error } = await supabase
         .from("schedules")
-        .select(`
-          *,
-          subjects!schedules_subject_id_fkey(name, code)
-        `)
+        .select("*")
         .in("subject_id", subjectIds);
       
-      if (error) throw new Error("Failed to fetch schedules");
-      return (data || []).map(mapDbRowToSchedule);
+      if (error) {
+        console.error("Failed to fetch schedules:", error);
+        throw new Error("Failed to fetch schedules");
+      }
+      
+      // Map data with subject info from our subjectMap
+      return (data || []).map(row => ({
+        id: row.id,
+        subjectId: row.subject_id,
+        dayOfWeek: row.day_of_week,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        room: row.room,
+        subjectName: subjectMap[row.subject_id]?.name,
+        subjectCode: subjectMap[row.subject_id]?.code,
+      }));
     },
     enabled: !!user?.id,
   });
@@ -57,16 +77,38 @@ export function useSubjectSchedules(subjectId: number) {
   return useQuery({
     queryKey: ["subject-schedules", subjectId],
     queryFn: async () => {
+      // First get the subject info
+      const { data: subject, error: subjectError } = await supabase
+        .from("subjects")
+        .select("name, code")
+        .eq("id", subjectId)
+        .single();
+      
+      if (subjectError) {
+        console.error("Failed to fetch subject:", subjectError);
+      }
+      
+      // Then get schedules
       const { data, error } = await supabase
         .from("schedules")
-        .select(`
-          *,
-          subjects!schedules_subject_id_fkey(name, code)
-        `)
+        .select("*")
         .eq("subject_id", subjectId);
       
-      if (error) throw new Error("Failed to fetch schedules");
-      return (data || []).map(mapDbRowToSchedule);
+      if (error) {
+        console.error("Failed to fetch schedules:", error);
+        throw new Error("Failed to fetch schedules");
+      }
+      
+      return (data || []).map(row => ({
+        id: row.id,
+        subjectId: row.subject_id,
+        dayOfWeek: row.day_of_week,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        room: row.room,
+        subjectName: subject?.name,
+        subjectCode: subject?.code,
+      }));
     },
     enabled: !!subjectId,
   });
@@ -89,14 +131,22 @@ export function useCreateSchedule() {
       const { data: result, error } = await supabase
         .from("schedules")
         .insert(dbData)
-        .select(`
-          *,
-          subjects!schedules_subject_id_fkey(name, code)
-        `)
+        .select("*")
         .single();
       
-      if (error) throw new Error("Failed to create schedule");
-      return mapDbRowToSchedule(result);
+      if (error) {
+        console.error("Failed to create schedule:", error);
+        throw new Error("Failed to create schedule");
+      }
+      
+      return {
+        id: result.id,
+        subjectId: result.subject_id,
+        dayOfWeek: result.day_of_week,
+        startTime: result.start_time,
+        endTime: result.end_time,
+        room: result.room,
+      };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["teacher-schedules"] });
