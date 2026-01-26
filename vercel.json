@@ -1,9 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build:client",
+  "buildCommand": "npm run build:client",
   "outputDirectory": "dist",
   "framework": null,
-  "installCommand": "npm install",
   "rootDirectory": "Dynamic-Brandings",
   "routes": [
     { "handle": "filesystem" },
