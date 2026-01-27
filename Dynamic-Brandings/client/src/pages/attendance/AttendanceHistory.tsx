@@ -57,33 +57,46 @@ export default function AttendanceHistory() {
 
   // Fetch all attendance records for teacher's subjects
   const { data: attendanceRecords, isLoading } = useQuery<AttendanceRecord[]>({
-    queryKey: ['teacher-attendance', user?.id],
+    queryKey: ['teacher-attendance'],
     queryFn: async () => {
-      if (!user?.id) return [];
+      console.log('Current user:', user);
       
-      // Get subjects taught by this teacher
-      const { data: teacherSubjects } = await supabase
-        .from("subjects")
-        .select("id")
-        .eq("teacher_id", user.id);
-      
-      if (!teacherSubjects || teacherSubjects.length === 0) return [];
-      
-      const subjectIds = teacherSubjects.map(s => s.id);
-      
-      // Get attendance records for those subjects
+      // TEMP: Get all attendance records to test
       const { data, error } = await supabase
         .from("attendance")
-        .select(`
-          *,
-          users!attendance_student_id_fkey(full_name),
-          subjects!attendance_subject_id_fkey(name)
-        `)
-        .in("subject_id", subjectIds);
+        .select("*");
+      
+      console.log('Raw attendance data count:', data?.length, 'Error:', error);
       
       if (error) throw new Error('Failed to fetch attendance records');
       
-      return (data || []).map((r: any) => ({
+      if (!data || data.length === 0) return [];
+      
+      // Get unique student and subject IDs
+      const studentIds = [...new Set(data.map(r => r.student_id))];
+      const subjectIdsFromAttendance = [...new Set(data.map(r => r.subject_id))];
+      
+      // Fetch student names
+      const { data: students, error: studentsError } = await supabase
+        .from("users")
+        .select("id, full_name")
+        .in("id", studentIds);
+      
+      console.log('Students data:', students, 'Error:', studentsError);
+      
+      // Fetch subject names
+      const { data: subjects, error: subjectsError } = await supabase
+        .from("subjects")
+        .select("id, name")
+        .in("id", subjectIdsFromAttendance);
+      
+      console.log('Subjects data:', subjects, 'Error:', subjectsError);
+      
+      // Create lookup maps
+      const studentMap = new Map(students?.map(s => [s.id, s.full_name]) || []);
+      const subjectMap = new Map(subjects?.map(s => [s.id, s.name]) || []);
+      
+      const mappedData = data.map((r: any) => ({
         id: r.id,
         studentId: r.student_id,
         subjectId: r.subject_id,
@@ -91,11 +104,15 @@ export default function AttendanceHistory() {
         status: r.status,
         timeIn: r.time_in,
         remarks: r.remarks,
-        studentName: r.users?.full_name || "Unknown",
-        subjectName: r.subjects?.name || "Unknown",
+        studentName: studentMap.get(r.student_id) || "Unknown",
+        subjectName: subjectMap.get(r.subject_id) || "Unknown",
       }));
+      
+      console.log('Final mapped data:', mappedData);
+      
+      return mappedData;
     },
-    enabled: !!user?.id,
+    enabled: true,
   });
 
   // Filter records based on selections

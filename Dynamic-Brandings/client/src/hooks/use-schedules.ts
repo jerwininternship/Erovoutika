@@ -22,42 +22,31 @@ export function useTeacherSchedules() {
   const { user } = useAuth();
   
   return useQuery({
-    queryKey: ["teacher-schedules", user?.id],
+    queryKey: ["teacher-schedules"],
     queryFn: async () => {
-      if (!user?.id) return [];
-      
-      // First get subjects taught by this teacher
-      const { data: subjects, error: subjectsError } = await supabase
-        .from("subjects")
-        .select("id, name, code")
-        .eq("teacher_id", user.id);
-      
-      if (subjectsError) {
-        console.error("Failed to fetch subjects:", subjectsError);
-        throw new Error("Failed to fetch subjects");
-      }
-      if (!subjects || subjects.length === 0) return [];
-      
-      const subjectIds = subjects.map(s => s.id);
-      
-      // Create a map of subject id to name/code for fallback
-      const subjectMap = subjects.reduce((acc, s) => {
-        acc[s.id] = { name: s.name, code: s.code };
-        return acc;
-      }, {} as Record<number, { name: string; code: string }>);
-      
-      // Then get schedules for those subjects
+      // TEMP: Get all schedules
       const { data, error } = await supabase
         .from("schedules")
-        .select("*")
-        .in("subject_id", subjectIds);
+        .select("*");
       
       if (error) {
         console.error("Failed to fetch schedules:", error);
         throw new Error("Failed to fetch schedules");
       }
       
-      // Map data with subject info from our subjectMap
+      // Get subject info for all schedules
+      const subjectIds = [...new Set(data?.map(s => s.subject_id) || [])];
+      const { data: subjects, error: subjectsError } = await supabase
+        .from("subjects")
+        .select("id, name, code")
+        .in("id", subjectIds);
+      
+      const subjectMap = subjects?.reduce((acc, s) => {
+        acc[s.id] = { name: s.name, code: s.code };
+        return acc;
+      }, {} as Record<number, { name: string; code: string }>) || {};
+      
+      // Map data with subject info
       return (data || []).map(row => ({
         id: row.id,
         subjectId: row.subject_id,
@@ -69,7 +58,7 @@ export function useTeacherSchedules() {
         subjectCode: subjectMap[row.subject_id]?.code,
       }));
     },
-    enabled: !!user?.id,
+    enabled: true,
   });
 }
 
