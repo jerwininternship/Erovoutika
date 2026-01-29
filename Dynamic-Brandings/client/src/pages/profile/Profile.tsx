@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import {
     User,
     Camera,
@@ -13,7 +14,8 @@ import {
     Pencil,
     Check,
     X,
-    AlertCircle
+    AlertCircle,
+    Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -439,6 +441,22 @@ export default function Profile() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Reset Password */}
+                        <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                                <Lock className="h-5 w-5 text-secondary-foreground" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">Password</p>
+                                <Link
+                                    href="/forgot-password?from=profile"
+                                    className="text-primary hover:underline font-medium"
+                                >
+                                    Reset Password
+                                </Link>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

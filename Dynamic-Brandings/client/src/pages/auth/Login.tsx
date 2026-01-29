@@ -4,14 +4,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useSystemSettings } from "@/hooks/use-system-settings";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { 
   GraduationCap, 
   Loader2, 
   User, 
   Lock, 
   BookOpen, 
-  ShieldCheck 
+  ShieldCheck
 } from "lucide-react";
 import {
   Form,
@@ -145,6 +145,13 @@ export default function Login() {
                     "Sign In"
                   )}
                 </Button>
+                <div className="text-center">
+                  <Link href="/forgot-password">
+                    <Button variant="ghost" type="button" className="text-sm text-muted-foreground hover:text-primary">
+                      Forgot your password?
+                    </Button>
+                  </Link>
+                </div>
               </form>
             </Form>
           </Tabs>

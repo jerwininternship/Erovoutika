@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react";
 
 // Pages
 import Login from "@/pages/auth/Login";
+import ForgotPassword from "@/pages/auth/ForgotPassword";
+import ResetPassword from "@/pages/auth/ResetPassword";
 import Dashboard from "@/pages/dashboard/Dashboard";
 import SubjectList from "@/pages/subjects/SubjectList";
 import UserManagement from "@/pages/admin/UserManagement";
@@ -70,6 +72,8 @@ function Router() {
     <Switch>
       {/* Public Routes */}
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
 
       {/* Protected Routes */}
       <Route path="/dashboard">
