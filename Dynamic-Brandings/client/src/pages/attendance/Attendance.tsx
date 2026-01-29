@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSubjects, useSubjectStudents } from "@/hooks/use-subjects";
 import { useTeacherSchedules } from "@/hooks/use-schedules";
@@ -9,8 +9,11 @@ import {
   QrCode,
   Play,
   Square,
-  Pause
+  Pause,
+  RefreshCw
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
+import { v4 as uuidv4 } from "uuid";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,6 +57,10 @@ export default function Attendance() {
   const [wasResumed, setWasResumed] = useState(false); // Track if session was paused and resumed
   const [currentTime, setCurrentTime] = useState(new Date());
   const [attendanceRecords, setAttendanceRecords] = useState<StudentAttendance[]>([]);
+  
+  // QR Code state - unique token that regenerates after each scan
+  const [currentQRToken, setCurrentQRToken] = useState<string>("");
+  const [scanCount, setScanCount] = useState(0);
   
   // Get students for selected subject
   const { data: students } = useSubjectStudents(
@@ -133,10 +140,58 @@ export default function Attendance() {
     return { total, present, late, absent, excused };
   }, [attendanceRecords]);
 
+  // Generate a new unique QR token
+  const generateNewToken = useCallback(() => {
+    const newToken = uuidv4();
+    setCurrentQRToken(newToken);
+    return newToken;
+  }, []);
+
+  // QR Code data structure - contains token, subject, and timestamp for validation
+  const qrCodeData = useMemo(() => {
+    if (!currentQRToken || !selectedSubjectId) return "";
+    
+    const data = {
+      token: currentQRToken,
+      subjectId: selectedSubjectId,
+      timestamp: Date.now(),
+      sessionId: `${selectedSubjectId}-${format(new Date(), 'yyyy-MM-dd')}`
+    };
+    
+    return JSON.stringify(data);
+  }, [currentQRToken, selectedSubjectId]);
+
+  // Simulate a student scanning the QR code (for testing)
+  // In production, this would be triggered by an API call from the student's device
+  const handleQRScanned = useCallback((studentId: number, scannedToken: string) => {
+    // Validate the token matches current valid token
+    if (scannedToken !== currentQRToken) {
+      console.log("Invalid or expired QR code!");
+      return false;
+    }
+    
+    if (sessionState !== 'active') {
+      console.log("Session is not active!");
+      return false;
+    }
+    
+    // Mark student as present (or absent if session was resumed)
+    const statusToSet: AttendanceStatus = wasResumed ? 'absent' : 'present';
+    handleStatusChange(studentId, statusToSet);
+    
+    // Regenerate QR code immediately - old one becomes invalid
+    generateNewToken();
+    setScanCount(prev => prev + 1);
+    
+    return true;
+  }, [currentQRToken, sessionState, wasResumed, generateNewToken]);
+
   const handleStartSession = () => {
     setSessionState('active');
     setWasResumed(false);
-    // In a real app, this would generate a QR code and start listening for scans
+    setScanCount(0);
+    // Generate initial QR code token when session starts
+    generateNewToken();
   };
 
   const handlePauseSession = () => {
@@ -146,11 +201,14 @@ export default function Attendance() {
   const handleResumeSession = () => {
     setSessionState('active');
     setWasResumed(true); // Mark that session was resumed - late scanners will be marked absent
+    // Generate new token when resuming
+    generateNewToken();
   };
 
   const handleEndSession = () => {
     setSessionState('inactive');
     setWasResumed(false);
+    setCurrentQRToken(""); // Invalidate QR code
     // Mark all students without status as absent
     setAttendanceRecords(prev => prev.map(record => ({
       ...record,
@@ -175,10 +233,11 @@ export default function Attendance() {
     }));
   };
 
-  // Simulate QR scan - after resume, students are marked absent
-  const handleQRScan = (studentId: number) => {
-    const statusToSet: AttendanceStatus = wasResumed ? 'absent' : 'present';
-    handleStatusChange(studentId, statusToSet);
+  // Manual QR regeneration (teacher can force regenerate if needed)
+  const handleManualRegenerate = () => {
+    if (sessionState === 'active') {
+      generateNewToken();
+    }
   };
 
   const handleEditSave = () => {
@@ -192,12 +251,21 @@ export default function Attendance() {
 
   const selectedSubject = subjects?.find(s => s.id.toString() === selectedSubjectId);
 
-  // Generate a simple QR code placeholder (in real app, use a QR library)
+  // Real QR Code Display component using qrcode.react
   const QRCodeDisplay = () => (
     <div className="flex flex-col items-center justify-center p-4">
-      {sessionState === 'active' ? (
-        <div className="bg-white p-4 rounded-lg shadow-inner">
-          <div className="w-48 h-48 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMSAyMSI+PHBhdGggZD0iTTEgMWg3djdIMXptMiAydjNoM1Yzem0xMi0yaDd2N2gtN3ptMiAydjNoM1Yzem0tMTYgMTJoN3Y3SDF6bTIgMnYzaDNWMTd6Ii8+PHBhdGggZD0iTTExIDFoMXYxaC0xem0wIDJoMXYxaC0xem0tMSAxaDN2MUg5di0xaDF6bTMgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bTMgMGgxdjFoLTF6bS05IDFoMXYxSDl6bTIgMGgxdjFoLTF6bTQgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bS04IDFoMXYxSDl6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bS02IDFoMXYxSDd6bTQgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bS04IDFoMXYxSDl6bTIgMGgxdjFoLTF6bTQgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bS04IDFoMXYxSDl6bTQgMGgxdjFoLTF6bTQgMGgxdjFoLTF6bS02IDFoMXYxaC0xem0yIDBoMXYxaC0xem0yIDBoMXYxaC0xem0yIDBoMXYxaC0xem0tNiAxaDF2MWgtMXptNCAwaDN2MWgtM3ptLTQgMWgxdjFoLTF6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bTIgMGgxdjFoLTF6bS0xMCAxaDF2MUg5em0yIDBoMXYxaC0xem0yIDBoMXYxaC0xem0yIDBoMXYxaC0xem0yIDBoMXYxaC0xem0yIDBoMXYxaC0xeiIvPjwvc3ZnPg==')] bg-contain bg-center bg-no-repeat" />
+      {sessionState === 'active' && qrCodeData ? (
+        <div className="bg-white p-4 rounded-lg shadow-inner relative">
+          <QRCodeSVG 
+            value={qrCodeData}
+            size={192}
+            level="M"
+            includeMargin={true}
+          />
+          {/* Scan counter badge */}
+          <div className="absolute -top-2 -right-2 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">
+            #{scanCount + 1}
+          </div>
         </div>
       ) : sessionState === 'paused' ? (
         <div className="w-48 h-48 bg-yellow-50 rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-yellow-400">
@@ -208,6 +276,26 @@ export default function Attendance() {
         <div className="w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
           <QrCode className="w-16 h-16 text-gray-400" />
         </div>
+      )}
+      
+      {/* Manual regenerate button - visible when session is active */}
+      {sessionState === 'active' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 text-xs text-muted-foreground hover:text-primary"
+          onClick={handleManualRegenerate}
+        >
+          <RefreshCw className="w-3 h-3 mr-1" />
+          Regenerate QR
+        </Button>
+      )}
+      
+      {/* Token info for debugging - can be removed in production */}
+      {sessionState === 'active' && currentQRToken && (
+        <p className="text-xs text-muted-foreground mt-1 font-mono">
+          Token: {currentQRToken.slice(0, 8)}...
+        </p>
       )}
     </div>
   );
