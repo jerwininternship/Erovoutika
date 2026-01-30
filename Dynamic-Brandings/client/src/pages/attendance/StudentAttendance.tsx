@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSubjects } from "@/hooks/use-subjects";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 import { Html5Qrcode } from "html5-qrcode";
 import { 
   CalendarCheck,
@@ -168,7 +169,7 @@ export default function StudentAttendance() {
     setIsScanning(false);
   }, []);
 
-  // Process the scanned QR code
+  // Process the scanned QR code - uses Supabase directly for Vercel compatibility
   const processQRCode = useCallback(async (qrData: string) => {
     if (isProcessing) return;
     
@@ -205,58 +206,99 @@ export default function StudentAttendance() {
         throw new Error("Invalid QR code data");
       }
 
-      console.log('Sending scan request with token:', token, 'subjectId:', subjectId);
+      // Check if user is logged in
+      if (!user || !user.id) {
+        throw new Error("Please log in to scan attendance");
+      }
 
-      // Validate and mark attendance via API
-      const response = await fetch('/api/attendance/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          qrCode: token,
-          subjectId: parseInt(subjectId)
+      if (user.role !== 'student') {
+        throw new Error("Only students can scan attendance QR codes");
+      }
+
+      console.log('Processing scan for user:', user.id, 'token:', token, 'subjectId:', subjectId);
+
+      // Step 1: Validate QR code against database
+      const { data: qrRecord, error: qrError } = await supabase
+        .from('qr_codes')
+        .select('id, subject_id, code, active')
+        .eq('code', token)
+        .eq('active', true)
+        .single();
+
+      if (qrError || !qrRecord) {
+        console.log('QR validation failed:', qrError);
+        throw new Error("Invalid or expired QR code. Please ask your teacher to regenerate.");
+      }
+
+      const validSubjectId = qrRecord.subject_id;
+      const isLate = token.includes('_LATE');
+
+      console.log('QR code validated, subjectId:', validSubjectId, 'isLate:', isLate);
+
+      // Step 2: Check if student is enrolled in this subject
+      const { data: enrollment, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('subject_id', validSubjectId)
+        .single();
+
+      if (enrollError || !enrollment) {
+        console.log('Enrollment check failed:', enrollError);
+        throw new Error("You are not enrolled in this subject");
+      }
+
+      // Step 3: Check if already marked attendance today
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingAttendance } = await supabase
+        .from('attendance')
+        .select('id, status')
+        .eq('student_id', user.id)
+        .eq('subject_id', validSubjectId)
+        .eq('date', today);
+
+      if (existingAttendance && existingAttendance.length > 0) {
+        setScanResult('already');
+        setScanMessage(`Attendance already recorded for today as ${existingAttendance[0].status}`);
+        return;
+      }
+
+      // Step 4: Deactivate the QR code (single use)
+      await supabase
+        .from('qr_codes')
+        .update({ active: false })
+        .eq('id', qrRecord.id);
+
+      // Step 5: Record attendance
+      const status = isLate ? 'late' : 'present';
+      const { data: newRecord, error: insertError } = await supabase
+        .from('attendance')
+        .insert({
+          student_id: user.id,
+          subject_id: validSubjectId,
+          date: today,
+          status,
+          time_in: new Date().toISOString(),
+          remarks: isLate ? 'Arrived late' : 'On time'
         })
-      });
+        .select()
+        .single();
 
-      console.log('Scan response status:', response.status);
+      if (insertError) {
+        console.error('Failed to insert attendance:', insertError);
+        throw new Error("Failed to record attendance. Please try again.");
+      }
 
-      // Handle empty response (e.g., 401 Unauthorized)
-      const responseText = await response.text();
-      console.log('Scan response text:', responseText);
+      console.log('Attendance recorded successfully:', newRecord);
+
+      setScanResult(status);
+      setScanMessage(`Attendance recorded as ${status}`);
+      refetchAttendance();
       
-      if (!responseText) {
-        if (response.status === 401) {
-          throw new Error("Please log in again to scan attendance");
-        }
-        throw new Error("Server returned empty response. Please try again.");
-      }
-
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('Failed to parse response:', parseError);
-        throw new Error(`Server error (${response.status}): ${responseText || 'Empty response'}`);
-      }
-
-      if (!response.ok) {
-        if (response.status === 400 && result.message?.includes('already')) {
-          setScanResult('already');
-          setScanMessage(result.message);
-        } else {
-          throw new Error(result.message || "Failed to record attendance");
-        }
-      } else {
-        const status = result.status as 'present' | 'late';
-        setScanResult(status);
-        setScanMessage(result.message);
-        refetchAttendance();
-        
-        toast({
-          title: status === 'present' ? "✓ Present!" : "⏰ Marked Late",
-          description: result.message,
-        });
-      }
+      toast({
+        title: status === 'present' ? "✓ Present!" : "⏰ Marked Late",
+        description: `Attendance recorded as ${status}`,
+      });
     } catch (error) {
       console.error("QR scan error:", error);
       setScanResult('error');
@@ -270,7 +312,7 @@ export default function StudentAttendance() {
     } finally {
       setIsProcessing(false);
     }
-  }, [isProcessing, stopScanner, refetchAttendance, toast]);
+  }, [isProcessing, stopScanner, refetchAttendance, toast, user]);
 
   // Start the QR scanner
   const startScanner = useCallback(async () => {
