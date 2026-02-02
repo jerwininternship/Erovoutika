@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSubjects, useCreateSubject, useSubjectStudents } from "@/hooks/use-subjects";
+import { useSubjects, useCreateSubject, useSubjectStudents, useStudentSubjects } from "@/hooks/use-subjects";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -80,7 +80,17 @@ import { supabase } from "@/lib/supabase";
 
 export default function SubjectList() {
   const { user } = useAuth();
-  const { data: subjects, isLoading } = useSubjects();
+  
+  // Use different hooks based on user role
+  const { data: allSubjects, isLoading: isLoadingAll } = useSubjects();
+  const { data: studentSubjects, isLoading: isLoadingStudent } = useStudentSubjects(
+    user?.role === "student" ? user?.id : undefined
+  );
+  
+  // Select the appropriate subjects based on role
+  const subjects = user?.role === "student" ? studentSubjects : allSubjects;
+  const isLoading = user?.role === "student" ? isLoadingStudent : isLoadingAll;
+  
   const [search, setSearch] = useState("");
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [editScheduleSubject, setEditScheduleSubject] = useState<Subject | null>(null);
@@ -117,10 +127,12 @@ export default function SubjectList() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold font-display text-gray-900">
-            {user?.role === "teacher" ? "My Classes" : "Subjects"}
+            {user?.role === "teacher" ? "My Classes" : user?.role === "student" ? "My Subjects" : "Subjects"}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage your academic courses and view details.
+            {user?.role === "student" 
+              ? "View your enrolled subjects and class details."
+              : "Manage your academic courses and view details."}
           </p>
         </div>
         {user?.role === "teacher" && <CreateSubjectDialog />}

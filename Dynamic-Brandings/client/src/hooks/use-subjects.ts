@@ -39,6 +39,39 @@ export function useSubjects() {
   });
 }
 
+// Fetch only subjects that a specific student is enrolled in
+export function useStudentSubjects(studentId: number | undefined) {
+  return useQuery({
+    queryKey: ["student-subjects", studentId],
+    queryFn: async () => {
+      if (!studentId) return [];
+      
+      // Get enrolled subject IDs for this student
+      const { data: enrollments, error: enrollError } = await supabase
+        .from("enrollments")
+        .select("subject_id")
+        .eq("student_id", studentId);
+      
+      if (enrollError) throw new Error("Failed to fetch enrollments");
+      
+      if (!enrollments || enrollments.length === 0) {
+        return [];
+      }
+      
+      // Get subject details for enrolled subjects
+      const subjectIds = enrollments.map(e => e.subject_id);
+      const { data: subjects, error: subjectsError } = await supabase
+        .from("subjects")
+        .select("*")
+        .in("id", subjectIds);
+      
+      if (subjectsError) throw new Error("Failed to fetch subjects");
+      return (subjects || []).map(mapDbRowToSubject);
+    },
+    enabled: !!studentId,
+  });
+}
+
 export function useSubject(id: number) {
   return useQuery({
     queryKey: ["subjects", id],
