@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSystemSettings } from "@/hooks/use-system-settings";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { 
   GraduationCap, 
@@ -46,6 +46,9 @@ export default function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+
+  const search = useSearch();
+  const isFromProfile = new URLSearchParams(search).get('from') === 'profile';
 
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -176,7 +179,7 @@ export default function ForgotPassword() {
             )}
           </div>
           <h1 className="text-2xl font-display font-bold tracking-tight text-gray-900">
-            Forgot Password?
+            {isFromProfile ? "Reset Password" : "Forgot Password?"}
           </h1>
           <p className="text-muted-foreground">
             No worries, we'll send you reset instructions.
@@ -213,10 +216,10 @@ export default function ForgotPassword() {
                 </div>
 
                 <div className="pt-4 border-t">
-                  <Link href="/login">
+                  <Link href={isFromProfile ? "/profile" : "/login"}>
                     <Button variant="ghost" className="w-full">
                       <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to login
+                      {isFromProfile ? "Back" : "Back to login"}
                     </Button>
                   </Link>
                 </div>
@@ -263,10 +266,10 @@ export default function ForgotPassword() {
                   </Button>
 
                   <div className="text-center">
-                    <Link href="/login">
+                    <Link href={isFromProfile ? "/profile" : "/login"}>
                       <Button variant="ghost" className="text-sm">
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to login
+                        {isFromProfile ? "Back" : "Back to login"}
                       </Button>
                     </Link>
                   </div>
