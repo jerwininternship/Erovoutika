@@ -461,8 +461,9 @@ export default function AttendanceHistory() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading attendance records...
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p>Loading attendance records...</p>
             </div>
           ) : Object.keys(recordsByDate).length > 0 ? (
             <div className="space-y-6">
