@@ -46,18 +46,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
-// Helper to format time in Philippine timezone (GMT+8)
+// Helper to format time - the database stores Philippine local time directly
 const formatTimeLocal = (timeValue: string | Date | null): string => {
   if (!timeValue) return '-';
   try {
-    // If it's a string, parse it; if it's a Date, use directly
-    const date = typeof timeValue === 'string' ? new Date(timeValue) : timeValue;
-    // Format in Philippine timezone
+    let date: Date;
+    if (typeof timeValue === 'string') {
+      // Database stores Philippine time without timezone info
+      // Parse as local time (don't convert, just format)
+      // Remove any trailing Z to prevent UTC interpretation
+      const cleanedValue = timeValue.replace('Z', '');
+      date = new Date(cleanedValue);
+    } else {
+      date = timeValue;
+    }
+    // Format without timezone conversion since it's already in Philippine time
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit', 
-      hour12: true,
-      timeZone: 'Asia/Manila'
+      hour12: true
     });
   } catch {
     return '-';

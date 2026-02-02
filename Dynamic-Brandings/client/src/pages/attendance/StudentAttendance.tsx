@@ -4,6 +4,7 @@ import { useSubjects } from "@/hooks/use-subjects";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { getPhilippineTimeISO } from "@/lib/utils";
 import { Html5Qrcode } from "html5-qrcode";
 import { 
   CalendarCheck,
@@ -276,7 +277,7 @@ export default function StudentAttendance() {
           .from('attendance')
           .update({ 
             status: newStatus,
-            time_in: new Date().toISOString(),
+            time_in: getPhilippineTimeISO(),
             remarks: isLate ? 'Arrived late (updated)' : 'On time (updated)'
           })
           .eq('id', existingRecord.id);
@@ -318,7 +319,7 @@ export default function StudentAttendance() {
           subject_id: validSubjectId,
           date: today,
           status,
-          time_in: new Date().toISOString(),
+          time_in: getPhilippineTimeISO(),
           remarks: isLate ? 'Arrived late' : 'On time'
         })
         .select()
@@ -617,7 +618,7 @@ export default function StudentAttendance() {
                       </TableCell>
                       <TableCell>
                         {record.timeIn 
-                          ? new Date(record.timeIn).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' })
+                          ? new Date(String(record.timeIn).replace('Z', '')).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
                           : '-'}
                       </TableCell>
                       <TableCell>

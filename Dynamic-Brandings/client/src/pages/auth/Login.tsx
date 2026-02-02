@@ -11,7 +11,7 @@ import {
   User, 
   Lock, 
   BookOpen, 
-  ShieldCheck 
+  ShieldCheck
 } from "lucide-react";
 import {
   Form,
@@ -145,7 +145,6 @@ export default function Login() {
                     "Sign In"
                   )}
                 </Button>
-
                 <div className="text-center">
                   <Link href="/forgot-password">
                     <Button variant="ghost" type="button" className="text-sm text-muted-foreground hover:text-primary">

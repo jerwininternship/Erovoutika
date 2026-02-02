@@ -5,6 +5,7 @@ import { useTeacherSchedules } from "@/hooks/use-schedules";
 import { useAttendance } from "@/hooks/use-attendance";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { getPhilippineTimeISO } from "@/lib/utils";
 import { 
   Search,
   Users,
@@ -454,7 +455,7 @@ export default function Attendance() {
               subject_id: parseInt(selectedSubjectId),
               date: today,
               status: 'absent',
-              time_in: new Date().toISOString(),
+              time_in: getPhilippineTimeISO(),
               remarks: 'Marked absent - did not scan QR'
             });
           absentCount++;
@@ -589,7 +590,7 @@ export default function Attendance() {
                   subject_id: parseInt(selectedSubjectId),
                   date: today,
                   status: record.status,
-                  time_in: new Date().toISOString()
+                  time_in: getPhilippineTimeISO()
                 });
               
               if (error) {

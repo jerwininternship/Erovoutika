@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { type Attendance, type MarkAttendanceRequest } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { getPhilippineTimeISO } from "@/lib/utils";
+
+// Helper to parse time stored as Philippine local time in the database
+function parsePhilippineTime(timeString: string | null): Date | null {
+  if (!timeString) return null;
+  // Remove any trailing Z to prevent UTC interpretation
+  // Database stores Philippine time without timezone
+  const cleanedValue = timeString.replace('Z', '');
+  return new Date(cleanedValue);
+}
 
 // Helper to map database row to Attendance type with extra fields
 function mapDbRowToAttendance(row: any): Attendance & { studentName: string; subjectName: string } {
@@ -11,7 +21,7 @@ function mapDbRowToAttendance(row: any): Attendance & { studentName: string; sub
     subjectId: row.subject_id,
     date: row.date,
     status: row.status,
-    timeIn: row.time_in ? new Date(row.time_in) : null,
+    timeIn: parsePhilippineTime(row.time_in),
     remarks: row.remarks,
     studentName: row.student?.full_name || row.users?.full_name || "Unknown",
     subjectName: row.subject?.name || row.subjects?.name || "Unknown",
@@ -71,7 +81,7 @@ export function useMarkAttendance() {
         date: data.date,
         status: data.status,
         remarks: data.remarks,
-        time_in: new Date().toISOString(),
+        time_in: getPhilippineTimeISO(),
       };
       
       const { data: result, error } = await supabase

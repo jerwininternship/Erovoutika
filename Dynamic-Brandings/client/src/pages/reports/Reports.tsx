@@ -535,7 +535,7 @@ export default function Reports() {
                               <TableCell>{format(parseISO(record.date), 'EEEE')}</TableCell>
                               <TableCell>
                                 {record.timeIn 
-                                  ? format(new Date(record.timeIn), 'h:mm a')
+                                  ? format(new Date(String(record.timeIn).replace('Z', '')), 'h:mm a')
                                   : '-'}
                               </TableCell>
                               <TableCell>{getStatusBadge(record.status)}</TableCell>
