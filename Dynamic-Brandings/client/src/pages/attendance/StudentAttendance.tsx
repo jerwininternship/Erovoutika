@@ -617,8 +617,8 @@ export default function StudentAttendance() {
                         <p className="font-medium">{record.subjectName || 'Unknown'}</p>
                       </TableCell>
                       <TableCell>
-                        {record.timeIn 
-                          ? new Date(String(record.timeIn).replace('Z', '')).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                        {record.timeIn && record.timeIn instanceof Date && !isNaN(record.timeIn.getTime())
+                          ? record.timeIn.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
                           : '-'}
                       </TableCell>
                       <TableCell>

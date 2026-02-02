@@ -4,6 +4,7 @@ import { useSubjects } from "@/hooks/use-subjects";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { getPhilippineTimeISO } from "@/lib/utils";
 import { 
   Search,
   Calendar,
@@ -102,9 +103,18 @@ export default function AttendanceHistory() {
   // Mutation for updating attendance
   const updateMutation = useMutation({
     mutationFn: async ({ id, status, remarks }: { id: number; status: string; remarks: string }) => {
+      // Determine if we should record time_in based on status
+      const shouldRecordTimeIn = status === 'present' || status === 'late';
+      const updateData: { status: string; remarks: string; time_in?: string | null } = { 
+        status, 
+        remarks: 'Manually edited',
+        // Set time_in for present/late, clear it for absent/excused
+        time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null
+      };
+      
       const { data, error } = await supabase
         .from('attendance')
-        .update({ status, remarks })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

@@ -75,13 +75,15 @@ export function useMarkAttendance() {
 
   return useMutation({
     mutationFn: async (data: MarkAttendanceRequest) => {
+      // Only record time_in for present or late status
+      const shouldRecordTimeIn = data.status === 'present' || data.status === 'late';
       const dbData = {
         student_id: data.studentId,
         subject_id: data.subjectId,
         date: data.date,
         status: data.status,
         remarks: data.remarks,
-        time_in: getPhilippineTimeISO(),
+        time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null,
       };
       
       const { data: result, error } = await supabase

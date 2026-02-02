@@ -455,7 +455,7 @@ export default function Attendance() {
               subject_id: parseInt(selectedSubjectId),
               date: today,
               status: 'absent',
-              time_in: getPhilippineTimeISO(),
+              time_in: null,
               remarks: 'Marked absent - did not scan QR'
             });
           absentCount++;
@@ -509,10 +509,16 @@ export default function Attendance() {
       const existingRecord = todayAttendance?.find(a => a.studentId === studentId);
       if (existingRecord) {
         // Update existing record
+        // Set time_in for present/late, clear for absent/excused
+        const shouldRecordTimeIn = status === 'present' || status === 'late';
         try {
           await supabase
             .from('attendance')
-            .update({ status })
+            .update({ 
+              status,
+              time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null,
+              remarks: 'Manually edited'
+            })
             .eq('id', existingRecord.id);
         } catch (error) {
           console.error('Failed to update attendance:', error);
@@ -565,9 +571,15 @@ export default function Attendance() {
               // Only update if status actually changed
               if (existingRecord.status !== record.status) {
                 console.log('Status changed! Updating...');
+                // Set time_in for present/late, clear for absent/excused
+                const shouldRecordTimeIn = record.status === 'present' || record.status === 'late';
                 const { error } = await supabase
                   .from('attendance')
-                  .update({ status: record.status })
+                  .update({ 
+                    status: record.status,
+                    time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null,
+                    remarks: 'Manually edited'
+                  })
                   .eq('id', existingRecord.id);
                 
                 if (error) {
@@ -583,6 +595,8 @@ export default function Attendance() {
             } else {
               console.log('No existing record found, creating new...');
               // Create new record if it doesn't exist
+              // Only record time_in for present or late status
+              const shouldRecordTimeIn = record.status === 'present' || record.status === 'late';
               const { error } = await supabase
                 .from('attendance')
                 .insert({
@@ -590,7 +604,7 @@ export default function Attendance() {
                   subject_id: parseInt(selectedSubjectId),
                   date: today,
                   status: record.status,
-                  time_in: getPhilippineTimeISO()
+                  time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null
                 });
               
               if (error) {
