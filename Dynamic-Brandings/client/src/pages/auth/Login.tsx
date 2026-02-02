@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,8 @@ import {
   User, 
   Lock, 
   BookOpen, 
-  ShieldCheck
+  ShieldCheck,
+  QrCode
 } from "lucide-react";
 import {
   Form,
@@ -25,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Using z.enum directly for type safety with the backend schema
 const loginSchema = z.object({
@@ -40,10 +42,37 @@ export default function Login() {
   const { settings } = useSystemSettings();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"student" | "teacher" | "superadmin">("student");
+  const [hasAttendanceScan, setHasAttendanceScan] = useState(false);
+
+  // Check for attendance scan parameters in URL (from QR code scanned via external app)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const scan = urlParams.get('scan');
+    const token = urlParams.get('token');
+    const subjectId = urlParams.get('subjectId');
+    
+    if (scan === 'attendance' && token && subjectId) {
+      // Store attendance data in sessionStorage for processing after login
+      sessionStorage.setItem('pendingAttendanceScan', JSON.stringify({
+        token,
+        subjectId,
+        timestamp: Date.now()
+      }));
+      setHasAttendanceScan(true);
+      // Force student tab since only students scan attendance
+      setActiveTab('student');
+    }
+  }, []);
 
   // Redirect if already logged in
   if (user) {
-    setLocation("/dashboard");
+    // If there's a pending attendance scan, redirect to attendance page
+    const pendingScan = sessionStorage.getItem('pendingAttendanceScan');
+    if (pendingScan && user.role === 'student') {
+      setLocation("/attendance");
+    } else {
+      setLocation("/dashboard");
+    }
     return null;
   }
 
@@ -74,12 +103,23 @@ export default function Login() {
               )}
             </div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-gray-900">
-              Welcome Back TEST#321
+              Welcome Back
             </h1>
             <p className="text-muted-foreground">
               Sign in to your {settings.systemTitle} account
             </p>
           </div>
+
+          {/* Show alert if redirected from QR scan */}
+          {hasAttendanceScan && (
+            <Alert className="bg-primary/10 border-primary/20">
+              <QrCode className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-primary">
+                <strong>Attendance QR Code Detected!</strong><br />
+                Please sign in with your student account to record your attendance.
+              </AlertDescription>
+            </Alert>
+          )}
 
           <Tabs 
             defaultValue="student" 

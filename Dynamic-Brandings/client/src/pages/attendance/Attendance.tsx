@@ -338,18 +338,21 @@ export default function Attendance() {
     }
   }, [todayAttendance, sessionState, lastAttendanceCount, wasResumed, sessionEnded, generateNewToken, toast]);
 
-  // QR Code data structure - contains token, subject, and timestamp for validation
+  // QR Code data structure - contains URL with token, subject, and timestamp for validation
+  // When scanned with any QR scanner, it redirects to login page with attendance params
   const qrCodeData = useMemo(() => {
     if (!currentQRToken || !selectedSubjectId) return "";
     
-    const data = {
+    // Create a URL that redirects to login with attendance parameters
+    const baseUrl = window.location.origin;
+    const params = new URLSearchParams({
       token: currentQRToken,
       subjectId: selectedSubjectId,
-      timestamp: Date.now(),
-      sessionId: `${selectedSubjectId}-${format(new Date(), 'yyyy-MM-dd')}`
-    };
+      ts: Date.now().toString(),
+      scan: 'attendance'
+    });
     
-    return JSON.stringify(data);
+    return `${baseUrl}/login?${params.toString()}`;
   }, [currentQRToken, selectedSubjectId]);
 
   // Simulate a student scanning the QR code (for testing)

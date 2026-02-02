@@ -171,17 +171,49 @@ export default function StudentAttendance() {
   }, []);
 
   // Process the scanned QR code - uses Supabase directly for Vercel compatibility
+  // Supports both JSON format (in-app scanner) and URL format (external scanner redirect)
   const processQRCode = useCallback(async (qrData: string) => {
     if (isProcessing) return;
     
-    // Validate QR data before processing - it must be valid JSON
     console.log('Raw QR data received:', qrData);
     console.log('QR data length:', qrData?.length);
     
-    // Quick validation - must look like JSON and have minimum length
-    if (!qrData || qrData.length < 20 || !qrData.startsWith('{') || !qrData.endsWith('}')) {
+    let token: string;
+    let subjectId: string;
+    
+    // Try to parse as JSON first (in-app QR scanner)
+    if (qrData.startsWith('{') && qrData.endsWith('}')) {
+      try {
+        const parsedData = JSON.parse(qrData);
+        token = parsedData.token;
+        subjectId = parsedData.subjectId;
+        console.log('Parsed JSON QR data:', parsedData);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        return; // Silently ignore invalid JSON
+      }
+    } 
+    // Try to parse as URL (external QR scanner redirect)
+    else if (qrData.includes('?') && qrData.includes('token=')) {
+      try {
+        const url = new URL(qrData);
+        token = url.searchParams.get('token') || '';
+        subjectId = url.searchParams.get('subjectId') || '';
+        console.log('Parsed URL QR data - token:', token, 'subjectId:', subjectId);
+      } catch (urlError) {
+        console.error('URL parse error:', urlError);
+        return; // Silently ignore invalid URL
+      }
+    }
+    // Invalid format
+    else {
       console.log('Invalid QR format, ignoring...');
-      return; // Silently ignore partial/invalid scans
+      return;
+    }
+    
+    if (!token || !subjectId) {
+      console.log('Missing token or subjectId');
+      return;
     }
     
     setIsProcessing(true);
@@ -190,23 +222,6 @@ export default function StudentAttendance() {
     await stopScanner();
 
     try {
-      // Parse the QR code data
-      let parsedData: { token: string; subjectId: string; timestamp: number; sessionId: string };
-      
-      try {
-        parsedData = JSON.parse(qrData);
-        console.log('Parsed QR data:', parsedData);
-      } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        throw new Error("Invalid QR code format. Please scan a valid attendance QR code.");
-      }
-
-      const { token, subjectId } = parsedData;
-      
-      if (!token || !subjectId) {
-        throw new Error("Invalid QR code data");
-      }
-
       // Check if user is logged in
       if (!user || !user.id) {
         throw new Error("Please log in to scan attendance");
@@ -413,6 +428,45 @@ export default function StudentAttendance() {
       }
     };
   }, []);
+
+  // Check for pending attendance scan from QR code scanned via external app
+  useEffect(() => {
+    const pendingScanData = sessionStorage.getItem('pendingAttendanceScan');
+    if (pendingScanData && user && user.role === 'student') {
+      try {
+        const { token, subjectId, timestamp } = JSON.parse(pendingScanData);
+        
+        // Check if scan is not too old (5 minutes max)
+        const fiveMinutes = 5 * 60 * 1000;
+        if (Date.now() - timestamp < fiveMinutes) {
+          // Clear the pending scan first to prevent re-processing
+          sessionStorage.removeItem('pendingAttendanceScan');
+          
+          // Create the URL format string that processQRCode expects
+          const qrUrl = `${window.location.origin}/login?token=${token}&subjectId=${subjectId}&scan=attendance`;
+          
+          // Process the attendance
+          toast({
+            title: "Processing Attendance",
+            description: "Recording your attendance from QR code scan...",
+          });
+          
+          processQRCode(qrUrl);
+        } else {
+          // Scan expired
+          sessionStorage.removeItem('pendingAttendanceScan');
+          toast({
+            title: "QR Code Expired",
+            description: "The scanned QR code has expired. Please scan again.",
+            variant: "destructive"
+          });
+        }
+      } catch (e) {
+        console.error('Failed to process pending scan:', e);
+        sessionStorage.removeItem('pendingAttendanceScan');
+      }
+    }
+  }, [user, processQRCode, toast]);
 
   // Reset scanner for another scan
   const resetScanner = useCallback(() => {
