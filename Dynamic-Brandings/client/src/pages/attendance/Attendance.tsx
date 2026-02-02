@@ -530,29 +530,9 @@ export default function Attendance() {
       return record;
     }));
 
-    // If we're in edit mode, also update the database
-    if (isEditing && selectedSubjectId) {
-      const existingRecord = todayAttendance?.find(a => a.studentId === studentId);
-      if (existingRecord) {
-        // Update existing record
-        // Set time_in for present/late, clear for absent/excused
-        const shouldRecordTimeIn = status === 'present' || status === 'late';
-        try {
-          await supabase
-            .from('attendance')
-            .update({ 
-              status,
-              time_in: shouldRecordTimeIn ? getPhilippineTimeISO() : null,
-              remarks: 'Manually edited'
-            })
-            .eq('id', existingRecord.id);
-          // Invalidate teacher-attendance cache so AttendanceHistory updates
-          queryClient.invalidateQueries({ queryKey: ['teacher-attendance'] });
-        } catch (error) {
-          console.error('Failed to update attendance:', error);
-        }
-      }
-    }
+    // Note: When in edit mode, we only update local state here.
+    // The database will be updated when the Save button is clicked in handleEditSave.
+    // This ensures the "No Changes" message works correctly.
   };
 
   // Manual QR regeneration (teacher can force regenerate if needed)
