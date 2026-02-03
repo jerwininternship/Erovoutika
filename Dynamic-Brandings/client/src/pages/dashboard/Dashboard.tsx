@@ -111,8 +111,8 @@ function StudentDashboard() {
         />
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="col-span-2 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <Card className="md:col-span-2 shadow-sm">
           <CardHeader>
             <CardTitle>Recent Attendance</CardTitle>
             <CardDescription>Your latest class records</CardDescription>
@@ -120,14 +120,14 @@ function StudentDashboard() {
           <CardContent>
             <div className="space-y-4">
               {attendance?.slice(0, 5).map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center">
-                      <BookOpen className="h-5 w-5 text-primary" />
+                <div key={record.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100 gap-3">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <BookOpen className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="font-medium text-sm text-gray-900">{record.subjectName || "Subject"}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(record.date), 'MMMM d, yyyy')}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-xs sm:text-sm text-gray-900 truncate">{record.subjectName || "Subject"}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">{format(new Date(record.date), 'MMMM d, yyyy')}</p>
                     </div>
                   </div>
                   <StatusBadge status={record.status} />
@@ -145,7 +145,7 @@ function StudentDashboard() {
             <CardTitle>Overview</CardTitle>
             <CardDescription>Status breakdown</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[280px] sm:h-[300px]">
             {totalClasses > 0 ? (
               <>
                 <ResponsiveContainer width="100%" height="80%">
@@ -154,8 +154,8 @@ function StudentDashboard() {
                       data={chartData.filter(d => d.value > 0)}
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={70}
+                      innerRadius={45}
+                      outerRadius={65}
                       paddingAngle={3}
                       dataKey="value"
                       label={({ name, value, percent }) => `${value} (${(percent * 100).toFixed(0)}%)`}
@@ -170,10 +170,10 @@ function StudentDashboard() {
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="flex flex-wrap justify-center gap-3 text-xs text-muted-foreground">
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground">
                   {chartData.map(item => (
-                    <div key={item.name} className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                    <div key={item.name} className="flex items-center gap-1 sm:gap-1.5">
+                      <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span>{item.name}: {item.value}</span>
                     </div>
                   ))}
