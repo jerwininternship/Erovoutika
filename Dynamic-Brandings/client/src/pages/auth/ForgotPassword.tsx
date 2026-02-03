@@ -57,7 +57,7 @@ export default function ForgotPassword() {
       // First check if user exists in our users table
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("id, email")
+        .select("id, email, full_name, password")
         .eq("email", data.email.toLowerCase())
         .single();
 
@@ -69,18 +69,61 @@ export default function ForgotPassword() {
         return;
       }
 
-      // Use Supabase built-in password reset
-      // This will send an email through Supabase's transactional email service
-      const redirectUrl = `${window.location.origin}/reset-password`;
+      // Try to sign up the user to Supabase Auth if they don't exist there yet
+      // This is needed because resetPasswordForEmail only works for Supabase Auth users
+      const tempPassword = userData.password || crypto.randomUUID();
       
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email.toLowerCase(), {
+      // First try to sign up (will fail if user already exists in auth)
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: data.email.toLowerCase(),
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: userData.full_name,
+            user_id: userData.id,
+          }
+        }
+      });
+      
+      // Ignore "User already registered" error - that's expected
+      if (signUpError && !signUpError.message.includes("already registered")) {
+        console.log("Sign up attempt result:", signUpError.message);
+      }
+
+      // Now request password reset
+      // Determine the correct redirect URL based on environment
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const redirectUrl = isLocalhost 
+        ? `${window.location.origin}/reset-password`
+        : "https://dlsuqr.vercel.app/reset-password";
+      
+      console.log("🔐 Requesting password reset for:", data.email.toLowerCase());
+      console.log("🔐 Redirect URL:", redirectUrl);
+      console.log("🔐 Is localhost:", isLocalhost);
+      
+      const { data: resetData, error } = await supabase.auth.resetPasswordForEmail(data.email.toLowerCase(), {
         redirectTo: redirectUrl,
       });
 
+      console.log("🔐 Reset response:", { resetData, error });
+
       if (error) {
         console.error("Supabase reset password error:", error);
-        // Still show success to prevent email enumeration
-        // but log the error for debugging
+        
+        // If rate limited, show specific message
+        if (error.message.includes("rate") || error.message.includes("limit")) {
+          toast({
+            title: "Too Many Requests",
+            description: "Please wait a few minutes before requesting another reset email.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Notice",
+            description: "If an account exists, a reset email will be sent shortly.",
+            variant: "default",
+          });
+        }
       } else {
         toast({
           title: "Email Sent! ✉️",

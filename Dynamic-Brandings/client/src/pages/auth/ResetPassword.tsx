@@ -90,14 +90,26 @@ export default function ResetPassword() {
 
   // Handle Supabase auth state change for password recovery
   useEffect(() => {
+    console.log("🔐 ResetPassword: Page loaded");
+    console.log("🔐 Full URL:", window.location.href);
+    console.log("🔐 Hash:", window.location.hash);
+    
     // Check for hash fragment (Supabase redirects with #access_token=...)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = hashParams.get('access_token');
     const type = hashParams.get('type');
     const errorDesc = hashParams.get('error_description');
+    const errorCode = hashParams.get('error_code');
+    const error = hashParams.get('error');
 
-    if (errorDesc) {
-      setErrorMessage(decodeURIComponent(errorDesc.replace(/\+/g, ' ')));
+    console.log("🔐 Parsed hash params:", { accessToken: accessToken ? "present" : "missing", type, errorDesc, errorCode, error });
+
+    if (error || errorDesc) {
+      const errorMsg = errorDesc 
+        ? decodeURIComponent(errorDesc.replace(/\+/g, ' '))
+        : error || "Unknown error";
+      console.error("🔐 Error from URL:", errorMsg);
+      setErrorMessage(errorMsg);
       setIsValidating(false);
       setIsValidSession(false);
       return;
