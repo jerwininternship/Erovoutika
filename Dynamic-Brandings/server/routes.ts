@@ -5,6 +5,21 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import passport from "passport";
+import { createClient } from "@supabase/supabase-js";
+
+// Create Supabase admin client for server-side operations
+const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+// Admin client for auth operations (only if service key is available)
+const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -69,6 +84,33 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Email already exists" });
       }
       const user = await storage.createUser(userData);
+      
+      // Also create user in Supabase Auth for password reset functionality
+      if (supabaseAdmin && userData.email) {
+        try {
+          const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: userData.email.toLowerCase(),
+            password: userData.password,
+            email_confirm: true, // Auto-confirm email so they can reset password immediately
+            user_metadata: {
+              full_name: userData.fullName,
+              user_id: user.id,
+              role: userData.role,
+            }
+          });
+          
+          if (authError) {
+            console.warn("Could not create Supabase Auth user:", authError.message);
+          } else {
+            console.log("✓ User also created in Supabase Auth:", authUser?.user?.email);
+          }
+        } catch (authErr) {
+          console.warn("Supabase Auth admin.createUser failed (non-blocking):", authErr);
+        }
+      } else if (!supabaseAdmin) {
+        console.warn("⚠️ SUPABASE_SERVICE_ROLE_KEY not set - user not added to Supabase Auth");
+      }
+      
       res.status(201).json(user);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -103,16 +145,108 @@ export async function registerRoutes(
       }
     }
 
+    // Get current user data before update (for Supabase Auth sync)
+    const currentUser = await storage.getUser(id);
+
     const updated = await storage.updateUser(id, updates);
     if (!updated) return res.status(404).json({ message: "User not found" });
+    
+    // Also update Supabase Auth if email or password changed
+    if (supabaseAdmin && currentUser?.email) {
+      try {
+        // Find the auth user by current email
+        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const authUser = authUsers?.users?.find(u => u.email?.toLowerCase() === currentUser.email.toLowerCase());
+        
+        if (authUser) {
+          const authUpdates: any = {};
+          if (updates.email && updates.email !== currentUser.email) {
+            authUpdates.email = updates.email.toLowerCase();
+          }
+          if (updates.password) {
+            authUpdates.password = updates.password;
+          }
+          if (updates.fullName) {
+            authUpdates.user_metadata = { 
+              ...authUser.user_metadata,
+              full_name: updates.fullName 
+            };
+          }
+          
+          if (Object.keys(authUpdates).length > 0) {
+            await supabaseAdmin.auth.admin.updateUserById(authUser.id, authUpdates);
+            console.log(`✓ Updated user ${updates.email || currentUser.email} in Supabase Auth`);
+          }
+        }
+      } catch (authErr) {
+        console.warn("Could not update Supabase Auth user (non-blocking):", authErr);
+      }
+    }
+    
     res.json(updated);
   });
 
   app.delete(api.users.delete.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const id = parseInt(req.params.id);
+    
+    // Get user email before deleting (needed to delete from Supabase Auth)
+    const user = await storage.getUser(id);
+    
+    // Delete from users table
     await storage.deleteUser(id);
+    
+    // Also delete from Supabase Auth if we have the admin client and user email
+    if (supabaseAdmin && user?.email) {
+      try {
+        // Find the auth user by email
+        const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+        const authUser = authUsers?.users?.find(u => u.email?.toLowerCase() === user.email.toLowerCase());
+        
+        if (authUser) {
+          await supabaseAdmin.auth.admin.deleteUser(authUser.id);
+          console.log(`✓ Deleted user ${user.email} from Supabase Auth`);
+        }
+      } catch (authErr) {
+        console.warn("Could not delete from Supabase Auth (non-blocking):", authErr);
+      }
+    }
+    
     res.sendStatus(204);
+  });
+
+  // === Delete Supabase Auth User by Email (admin endpoint) ===
+  app.post('/api/auth/delete-auth-user', async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    const currentUser = req.user as any;
+    if (currentUser.role !== 'superadmin') {
+      return res.status(403).json({ message: "Only superadmin can delete auth users" });
+    }
+    
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    
+    if (!supabaseAdmin) {
+      return res.status(500).json({ message: "Supabase admin not configured" });
+    }
+    
+    try {
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const authUser = authUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      if (authUser) {
+        await supabaseAdmin.auth.admin.deleteUser(authUser.id);
+        res.json({ success: true, message: "Auth user deleted" });
+      } else {
+        res.json({ success: true, message: "Auth user not found (already deleted or never existed)" });
+      }
+    } catch (err) {
+      console.error("Delete auth user error:", err);
+      res.status(500).json({ message: "Failed to delete auth user" });
+    }
   });
 
   // === Subjects ===

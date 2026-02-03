@@ -68,6 +68,19 @@ export function useAuth() {
         throw new Error("Invalid email/ID number or password");
       }
 
+      // Also authenticate with Express server to establish session cookie
+      // This is needed for admin operations (create/update/delete users)
+      try {
+        await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ identifier, password }),
+        });
+      } catch (e) {
+        console.warn("Express login failed (non-blocking):", e);
+      }
+
       // Map database columns to User type (handle snake_case to camelCase)
       const user: User = {
         id: userData.id,
@@ -102,6 +115,17 @@ export function useAuth() {
     mutationFn: async () => {
       // Clear localStorage
       storeUser(null);
+      
+      // Also logout from Express server
+      try {
+        await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch (e) {
+        console.warn("Express logout failed (non-blocking):", e);
+      }
+      
       return Promise.resolve();
     },
     onSuccess: () => {

@@ -40,26 +40,21 @@ export function useCreateUser() {
 
   return useMutation({
     mutationFn: async (data: CreateUserRequest) => {
-      // Map camelCase to snake_case for database
-      const dbData = {
-        id_number: data.idNumber,
-        email: data.email,
-        password: data.password,
-        full_name: data.fullName,
-        role: data.role,
-        profile_picture: data.profilePicture,
-      };
+      // Use the server API to create users - this ensures they're added to both
+      // the users table AND Supabase Auth (using admin privileges)
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
       
-      const { data: result, error } = await supabase
-        .from("users")
-        .insert(dbData)
-        .select()
-        .single();
-      
-      if (error) {
-        throw new Error(error.message || "Failed to create user");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create user');
       }
-      return mapDbRowToUser(result);
+      
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -81,16 +76,28 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await supabase
-        .from("users")
-        .delete()
-        .eq("id", id);
+      // Use server API to delete - this ensures deletion from both
+      // users table AND Supabase Auth
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
       
-      if (error) throw new Error("Failed to delete user");
+      if (!response.ok && response.status !== 204) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete user");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      toast({ title: "User Deleted", description: "The user account has been removed." });
+      toast({ title: "User Deleted", description: "The user account has been removed from all systems." });
+    },
+    onError: (err) => {
+      toast({ 
+        title: "Error", 
+        description: err.message, 
+        variant: "destructive" 
+      });
     },
   });
 }
@@ -101,26 +108,21 @@ export function useUpdateUser() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<CreateUserRequest> }) => {
-      // Map camelCase to snake_case for database
-      const dbData: Record<string, any> = {};
-      if (data.idNumber !== undefined) dbData.id_number = data.idNumber;
-      if (data.email !== undefined) dbData.email = data.email;
-      if (data.password !== undefined) dbData.password = data.password;
-      if (data.fullName !== undefined) dbData.full_name = data.fullName;
-      if (data.role !== undefined) dbData.role = data.role;
-      if (data.profilePicture !== undefined) dbData.profile_picture = data.profilePicture;
-
-      const { data: result, error } = await supabase
-        .from("users")
-        .update(dbData)
-        .eq("id", id)
-        .select()
-        .single();
+      // Use server API to update - this ensures updates to both
+      // users table AND Supabase Auth
+      const response = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
       
-      if (error) {
-        throw new Error(error.message || "Failed to update user");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update user");
       }
-      return mapDbRowToUser(result);
+      
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
