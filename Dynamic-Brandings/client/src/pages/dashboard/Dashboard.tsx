@@ -42,17 +42,17 @@ export default function Dashboard() {
 
 function StatsCard({ title, value, icon: Icon, description, trend }: any) {
   return (
-    <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-200">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+    <Card className="shadow-sm border-border hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 sm:pb-2 p-3 sm:p-6">
+        <CardTitle className="text-[10px] sm:text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
+      <CardContent className="p-3 sm:p-6 pt-0">
+        <div className="text-lg sm:text-2xl font-bold text-gray-900">{value}</div>
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1 truncate">
             {trend && <span className="text-green-600 font-medium mr-1">{trend}</span>}
             {description}
           </p>
@@ -300,59 +300,59 @@ function TeacherDashboard() {
     .sort((a, b) => a.startTime.localeCompare(b.startTime)) || [];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-6 overflow-x-hidden">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <StatsCard title="Total Classes" value={subjects?.length || 0} icon={BookOpen} description="Active subjects" />
         <StatsCard title="Total Students" value={totalStudents} icon={Users} description="Across all sections" />
         <StatsCard title="Avg. Attendance" value={avgAttendance} icon={TrendingUp} description="This semester" />
         <StatsCard title="Classes Today" value={todayClasses.length} icon={Clock} description={today} />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Schedule Card */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarCheck className="h-5 w-5 text-primary" />
+        <Card className="shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 px-3 sm:px-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <CalendarCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Class Schedule
             </CardTitle>
-            <CardDescription>Your daily and weekly class schedule</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Your daily and weekly class schedule</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="px-3 sm:px-6">
+            <div className="space-y-4 sm:space-y-5">
               {/* Today's Schedule */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   Today's Classes ({today})
                 </h3>
                 {todayClasses.length > 0 ? (
                   <div className="space-y-2">
                     {todayClasses.map((cls, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                            <BookOpen className="h-5 w-5" />
+                      <div key={idx} className="flex items-center justify-between p-2 sm:p-3 bg-primary/5 rounded-lg border border-primary/20 gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                           </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">{cls.subjectName}</h4>
-                            <span className="text-xs text-muted-foreground">{cls.subjectCode}</span>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-gray-900 text-xs sm:text-sm truncate">{cls.subjectName}</h4>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">{cls.subjectCode}</span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium text-gray-900">
-                            {formatTime(cls.startTime)} - {formatTime(cls.endTime)}
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-[10px] sm:text-sm font-medium text-gray-900 whitespace-nowrap">
+                            {formatTime(cls.startTime)}
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
-                            <MapPin className="h-3 w-3" />
-                            {cls.room}
+                          <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground justify-end">
+                            <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            <span className="truncate max-w-[50px] sm:max-w-none">{cls.room}</span>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-muted-foreground bg-gray-50 rounded-lg border border-dashed text-sm">
+                  <div className="text-center py-3 sm:py-4 text-muted-foreground bg-gray-50 rounded-lg border border-dashed text-xs sm:text-sm">
                     No classes scheduled for today
                   </div>
                 )}
@@ -360,38 +360,34 @@ function TeacherDashboard() {
 
               {/* Weekly Schedule */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Weekly Schedule</h3>
-                <div className="space-y-3">
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2 sm:mb-3">Weekly Schedule</h3>
+                <div className="space-y-2 sm:space-y-3">
                   {Object.values(groupedSchedules).length > 0 ? (
                     Object.values(groupedSchedules).map((group, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-gray-900 text-sm">{group.subjectName}</h4>
-                            <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                              {group.subjectCode}
-                            </span>
-                          </div>
+                      <div key={idx} className="p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-start gap-2 mb-2 flex-wrap">
+                          <h4 className="font-medium text-gray-900 text-xs sm:text-sm break-words">{group.subjectName}</h4>
+                          <span className="text-[10px] sm:text-xs font-mono bg-primary/10 text-primary px-1 sm:px-1.5 py-0.5 rounded flex-shrink-0">
+                            {group.subjectCode}
+                          </span>
                         </div>
-                        <div className="space-y-1.5">
+                        <div className="space-y-1 sm:space-y-1.5">
                           {consolidateSchedules(group.schedules).map((sched, schedIdx) => (
-                            <div key={schedIdx} className="grid grid-cols-[180px_1fr_auto] items-center gap-2 text-xs bg-white p-2 rounded border border-gray-100">
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                <div className="font-medium text-gray-700 truncate">
+                            <div key={schedIdx} className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3 sm:gap-y-1 text-[10px] sm:text-xs bg-white p-1.5 sm:p-2 rounded border border-gray-100">
+                              <div className="flex items-center gap-1 sm:gap-1.5">
+                                <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground flex-shrink-0" />
+                                <span className="font-medium text-gray-700">
                                   {sched.days.length > 1 
                                     ? sched.days.map(d => dayAbbr[d]).join(', ')
-                                    : sched.days[0]
+                                    : dayAbbr[sched.days[0]] || sched.days[0]
                                   }
-                                </div>
-                              </div>
-                              <div className="flex justify-center">
-                                <span className="text-muted-foreground min-w-[140px]">
+                                </span>
+                                <span className="text-muted-foreground">
                                   {formatTime(sched.startTime)} - {formatTime(sched.endTime)}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
+                              <div className="flex items-center gap-1 text-muted-foreground ml-4 sm:ml-0">
+                                <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                 <span>{sched.room}</span>
                               </div>
                             </div>
@@ -400,7 +396,7 @@ function TeacherDashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-muted-foreground bg-gray-50 rounded-lg border border-dashed text-sm">
+                    <div className="text-center py-3 sm:py-4 text-muted-foreground bg-gray-50 rounded-lg border border-dashed text-xs sm:text-sm">
                       No schedules set up yet
                     </div>
                   )}
@@ -411,35 +407,35 @@ function TeacherDashboard() {
         </Card>
 
         {/* My Classes Card */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle>My Classes</CardTitle>
-            <CardDescription>Manage your subjects and students</CardDescription>
+        <Card className="shadow-sm overflow-hidden">
+          <CardHeader className="pb-3 px-3 sm:px-6">
+            <CardTitle className="text-base sm:text-lg">My Classes</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Manage your subjects and students</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="px-3 sm:px-6">
+            <div className="space-y-2 sm:space-y-3">
               {subjects?.map(subject => (
                 <div 
                   key={subject.id} 
-                  className="p-4 rounded-xl border bg-card hover:border-primary/50 transition-colors group cursor-pointer"
+                  className="p-2.5 sm:p-4 rounded-lg sm:rounded-xl border bg-card hover:border-primary/50 transition-colors group cursor-pointer"
                   onClick={() => setLocation(`/subjects?viewStudents=${subject.id}`)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-                      <BookOpen className="h-5 w-5" />
+                  <div className="flex justify-between items-start gap-2 mb-1.5 sm:mb-2">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors flex-shrink-0">
+                      <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">{subject.code}</span>
+                    <span className="text-[10px] sm:text-xs font-mono bg-gray-100 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-gray-600">{subject.code}</span>
                   </div>
-                  <h3 className="font-semibold text-base mb-1">{subject.name}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-1">{subject.description || "No description provided."}</p>
-                  <div className="mt-3 pt-3 border-t flex justify-between items-center text-sm">
+                  <h3 className="font-semibold text-xs sm:text-base mb-0.5 sm:mb-1 truncate">{subject.name}</h3>
+                  <p className="text-[10px] sm:text-sm text-muted-foreground line-clamp-1">{subject.description || "No description provided."}</p>
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t flex justify-between items-center text-[10px] sm:text-sm">
                     <span className="text-muted-foreground">View Students</span>
                     <span className="text-primary font-medium group-hover:underline">View →</span>
                   </div>
                 </div>
               ))}
               {(!subjects || subjects.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-xl border border-dashed">
+                <div className="text-center py-6 sm:py-8 text-muted-foreground bg-gray-50 rounded-xl border border-dashed text-xs sm:text-sm">
                   No classes assigned yet.
                 </div>
               )}
