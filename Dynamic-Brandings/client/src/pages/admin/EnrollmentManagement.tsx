@@ -74,7 +74,7 @@ export default function EnrollmentManagement() {
   const selectedSubject = subjects.find(s => s.id === selectedSubjectId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Enrollment Management</h1>
@@ -84,7 +84,7 @@ export default function EnrollmentManagement() {
       </div>
 
       {/* Subject Selection */}
-      <Card>
+      <Card className="border-2 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -129,7 +129,7 @@ export default function EnrollmentManagement() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Enrolled Students */}
-            <Card>
+            <Card className="border-2 border-primary/20 min-w-0 overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default function EnrollmentManagement() {
                   Students currently enrolled in {selectedSubject?.code}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0 sm:p-6">
                 {enrolledLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -152,7 +152,7 @@ export default function EnrollmentManagement() {
                     {searchTerm ? "No matching enrolled students" : "No students enrolled yet"}
                   </div>
                 ) : (
-                  <div className="rounded-md border">
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -212,7 +212,7 @@ export default function EnrollmentManagement() {
             </Card>
 
             {/* Available Students */}
-            <Card>
+            <Card className="border-2 border-primary/20 min-w-0 overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export default function EnrollmentManagement() {
                   Students not enrolled in {selectedSubject?.code}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0 sm:p-6">
                 {studentsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -235,7 +235,7 @@ export default function EnrollmentManagement() {
                     {searchTerm ? "No matching available students" : "All students are enrolled"}
                   </div>
                 ) : (
-                  <div className="rounded-md border">
+                  <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
