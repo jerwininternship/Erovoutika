@@ -194,18 +194,28 @@ export function Layout({ children }: LayoutProps) {
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-6 border-b border-border/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-              {settings.logoUrl ? (
-                <img src={settings.logoUrl} alt="Logo" className="w-6 h-6 object-contain" />
-              ) : (
-                <GraduationCap className="w-6 h-6" />
-              )}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                {settings.logoUrl ? (
+                  <img src={settings.logoUrl} alt="Logo" className="w-6 h-6 object-contain" />
+                ) : (
+                  <GraduationCap className="w-6 h-6" />
+                )}
+              </div>
+              <div>
+                <h1 className="font-display font-bold text-xl text-primary leading-none">{settings.systemTitle}</h1>
+                <span className="text-xs text-muted-foreground font-medium">{settings.schoolName}</span>
+              </div>
             </div>
-            <div>
-              <h1 className="font-display font-bold text-xl text-primary leading-none">{settings.systemTitle}</h1>
-              <span className="text-xs text-muted-foreground font-medium">{settings.schoolName}</span>
-            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="md:hidden -mr-2" 
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <X className="w-5 h-5" />
+            </Button>
           </div>
         </div>
 
@@ -260,7 +270,10 @@ export function Layout({ children }: LayoutProps) {
       {/* Main Content */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile Header */}
-        <div className="md:hidden bg-white border-b border-border p-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="md:hidden bg-white border-b border-border p-4 flex items-center gap-3 sticky top-0 z-30">
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </Button>
           <div className="flex items-center gap-2">
             {settings.logoUrl ? (
               <img src={settings.logoUrl} alt="Logo" className="w-6 h-6 object-contain" />
@@ -269,9 +282,6 @@ export function Layout({ children }: LayoutProps) {
             )}
             <span className="font-bold text-primary">{settings.systemTitle}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </Button>
         </div>
 
         <div className="flex-1 p-4 md:p-8 overflow-y-auto">
