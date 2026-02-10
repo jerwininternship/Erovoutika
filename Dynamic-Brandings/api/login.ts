@@ -6,9 +6,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+// Use service role key if available, otherwise fall back to anon key
+const supabaseKey = supabaseServiceKey || supabaseAnonKey;
+const supabase = supabaseKey
+  ? createClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
@@ -30,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  if (!supabaseAdmin) {
+  if (!supabase) {
     return res.status(500).json({ message: 'Server configuration error' });
   }
 
@@ -42,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Look up user by email or ID number
-    const { data: userData, error } = await supabaseAdmin
+    const { data: userData, error } = await supabase
       .from('users')
       .select('id, id_number, email, password, full_name, role, profile_picture, created_at')
       .or(`email.eq.${identifier},id_number.eq.${identifier}`)
