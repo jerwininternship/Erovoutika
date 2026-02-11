@@ -239,7 +239,7 @@ export default function SystemSettings() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Tabs defaultValue="branding" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+            <TabsList className="grid w-full grid-cols-2 lg:w-[300px]">
               <TabsTrigger value="branding" className="flex items-center gap-2">
                 <Building2 className="w-4 h-4" />
                 Branding
@@ -247,10 +247,6 @@ export default function SystemSettings() {
               <TabsTrigger value="colors" className="flex items-center gap-2">
                 <Palette className="w-4 h-4" />
                 Colors
-              </TabsTrigger>
-              <TabsTrigger value="design" className="flex items-center gap-2">
-                <Image className="w-4 h-4" />
-                Design
               </TabsTrigger>
             </TabsList>
 
@@ -594,168 +590,6 @@ export default function SystemSettings() {
                             className="w-3/4 h-full rounded-full"
                             style={{ backgroundColor: watchPrimaryColor }}
                           />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Design Tab */}
-            <TabsContent value="design" className="space-y-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Theme Mode</CardTitle>
-                  <CardDescription>
-                    Choose the default appearance mode for the system
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="theme"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="grid grid-cols-3 gap-4 max-w-lg"
-                          >
-                            <Label
-                              htmlFor="light"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'light'
-                                ? 'border-primary bg-primary/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                            >
-                              <RadioGroupItem value="light" id="light" className="sr-only" />
-                              <Sun className="w-6 h-6 mb-2" />
-                              <span className="text-sm font-medium">Light</span>
-                            </Label>
-                            <Label
-                              htmlFor="dark"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'dark'
-                                ? 'border-primary bg-primary/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                            >
-                              <RadioGroupItem value="dark" id="dark" className="sr-only" />
-                              <Moon className="w-6 h-6 mb-2" />
-                              <span className="text-sm font-medium">Dark</span>
-                            </Label>
-                            <Label
-                              htmlFor="system"
-                              className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === 'system'
-                                ? 'border-primary bg-primary/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                            >
-                              <RadioGroupItem value="system" id="system" className="sr-only" />
-                              <Monitor className="w-6 h-6 mb-2" />
-                              <span className="text-sm font-medium">System</span>
-                            </Label>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Typography</CardTitle>
-                  <CardDescription>
-                    Select the font family for the system interface
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <FormField
-                    control={form.control}
-                    name="fontFamily"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-                          >
-                            {[
-                              { value: 'inter', label: 'Inter', sample: 'Aa Bb Cc' },
-                              { value: 'roboto', label: 'Roboto', sample: 'Aa Bb Cc' },
-                              { value: 'poppins', label: 'Poppins', sample: 'Aa Bb Cc' },
-                              { value: 'open-sans', label: 'Open Sans', sample: 'Aa Bb Cc' },
-                            ].map((font) => (
-                              <Label
-                                key={font.value}
-                                htmlFor={font.value}
-                                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 cursor-pointer transition-all ${field.value === font.value
-                                  ? 'border-primary bg-primary/5'
-                                  : 'border-gray-200 hover:border-gray-300'
-                                  }`}
-                              >
-                                <RadioGroupItem value={font.value} id={font.value} className="sr-only" />
-                                <span
-                                  className="text-2xl mb-2"
-                                  style={{ fontFamily: font.label }}
-                                >
-                                  {font.sample}
-                                </span>
-                                <span className="text-sm font-medium">{font.label}</span>
-                              </Label>
-                            ))}
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Login Page Preview</CardTitle>
-                  <CardDescription>
-                    See how your settings will look on the login page
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="grid md:grid-cols-2 min-h-[300px]">
-                      <div className={`p-6 flex items-center justify-center ${getPreviewBgClass()}`}>
-                        <div className="text-center space-y-3">
-                          <div
-                            className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center text-white shadow-lg"
-                            style={{ backgroundColor: watchPrimaryColor }}
-                          >
-                            {logoPreview ? (
-                              <img src={logoPreview} alt="Logo" className="w-8 h-8 object-contain" />
-                            ) : (
-                              <GraduationCap className="w-6 h-6" />
-                            )}
-                          </div>
-                          <h3 className={`font-bold text-lg ${getPreviewTextClass()}`}>
-                            {watchSystemTitle || "AttendED"}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">Sign in to continue</p>
-                        </div>
-                      </div>
-                      <div
-                        className="p-6 flex items-center justify-center text-white"
-                        style={{ backgroundColor: watchPrimaryColor }}
-                      >
-                        <div className="text-center space-y-2">
-                          <h3 className="font-bold text-lg">
-                            {watchSchoolName || "Your School Name"}
-                          </h3>
-                          <p className="text-sm opacity-80">
-                            {watchTagline || "Your tagline here"}
-                          </p>
                         </div>
                       </div>
                     </div>

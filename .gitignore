@@ -1,3 +1,5 @@
 node_modules/
 Dynamic-Brandings/.env
 .env
+dist/
+Dynamic-Brandings/dist/

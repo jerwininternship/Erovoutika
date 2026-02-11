@@ -103,7 +103,7 @@ export default function Login() {
               )}
             </div>
             <h1 className="text-3xl font-display font-bold tracking-tight text-gray-900">
-              Welcome Back TESTERSIX-SEVEN
+              Welcome Back
             </h1>
             <p className="text-muted-foreground">
               Sign in to your {settings.systemTitle} account
