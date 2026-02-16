@@ -14,13 +14,13 @@ export interface SystemSettings {
 }
 
 const defaultSettings: SystemSettings = {
-  schoolName: "De La Salle University",
-  systemTitle: "AttendED",
-  tagline: "Streamlining Academic Attendance",
-  primaryColor: "#006937",
-  secondaryColor: "#004d29",
-  logoUrl: "",
-  faviconUrl: "",
+  schoolName: "Robotics and Automation Solutions",
+  systemTitle: "Erovoutika",
+  tagline: "One-Stop-Shop Innovation Solutions",
+  primaryColor: "#00008B",
+  secondaryColor: "#ffffff",
+  logoUrl: "/workspaces/Erovoutika/Dynamic-Brandings/client/public/Logo.webp",
+  faviconUrl: "/workspaces/Erovoutika/Dynamic-Brandings/client/public/favicon.png",
   theme: "light",
   fontFamily: "inter",
 };
